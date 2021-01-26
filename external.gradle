@@ -1,0 +1,266 @@
+import groovy.swing.SwingBuilder
+
+
+import javax.crypto.spec.SecretKeySpec
+import javax.swing.*
+import javax.xml.*
+import java.awt.*
+import java.nio.charset.StandardCharsets
+import javax.crypto.Cipher
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url "http://192.168.4.78:8081/repository/maven-releases"
+    }
+    maven {
+        url "http://192.168.4.78:8081/repository/maven-mixed"
+    }
+}
+
+publishing {
+    publications {
+        shadow(MavenPublication) { publication ->
+            project.shadow.component(publication)
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}
+
+sonarqube {
+    properties {
+        property "sonar.jacoco.reportPaths", "${project.buildDir}/jacoco/test.exec"
+        property "sonar.dependencyCheck.reportPath", "${project.buildDir}/reports/dependency-check-report.xml"
+        property 'sonar.dependencyCheck.htmlReportPath', "${project.buildDir}/reports/dependency-check-report.html"
+    }
+}
+
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.1'
+    }
+}
+
+tasks.compileJava.dependsOn("generateMetaInf")
+
+task generateMetaInf {
+
+    doLast {
+        File srcDir = file("${projectDir}/src/main/resources/META-INF/services")
+        mkdir srcDir;
+        project.delete(files(srcDir.listFiles()));
+
+        FileTree tree = fileTree('src/main').include('**/service/impl/*')
+        if (tree.isEmpty()) {
+            tree = fileTree('src/main').include('**/service/*')
+        }
+
+        tree.each { File file ->
+            String _package = "";
+            Map<String, String> imports = new HashMap<>();
+            def _classname = "";
+            file.eachLine { line ->
+                // check if the line contains your data
+
+                if (line.contains('package')) {
+                    _package = line.trim().split()[1].replace(';', '.');
+                }
+
+                if (line.contains('import') && line.contains('com.payline.pmapi.service')) {
+                    def _import = line.trim().split()[1].replace(';', '');
+                    String[] wrds = _import.split("\\.");
+                    def key = wrds[wrds.length - 1];
+                    imports.put(key, _import)
+
+                }
+
+                if (line.contains('class') && line.contains('implements')) {
+                    _classname = file.getName().replace(".java", "");
+                    String implementedClasses = line.trim().split("implements")[1];
+                    implementedClasses.replace(",", " ").trim();
+                    String[] implementedClasse = implementedClasses.split();
+                    for (int i = 0; i < implementedClasse.length; i++) {
+                        if (imports.containsKey(implementedClasse[i])) {
+                            def metafile = new File(srcDir.getPath() + '/' + imports.get(implementedClasse[i]));
+                            metafile.write(_package + _classname);
+                        }
+                    }
+
+                }
+
+            }
+
+        }
+    }
+}
+
+
+tasks.build.dependsOn("checkJarSize")
+task checkJarSize {
+    doLast {
+
+        File file = new File("${projectDir}/build/libs/${jar.archiveName}")
+        if (file.length() > 2097152) {
+            JOptionPane.showMessageDialog(null, "Jar file size is too heavy : " + file.length(),
+                    "Titre : exception",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}
+
+
+def THALES_TASK_GROUP = 'thales taks'
+
+
+task encryt {
+    group = THALES_TASK_GROUP
+
+    gradle.taskGraph.whenReady { taskGraph ->
+        def toEncrypt = '';
+        def encryptKey = '';
+
+        doLast {
+            new SwingBuilder().edt {
+                lookAndFeel 'nimbus'
+                dialog(modal: true,// Otherwise the build will continue running before you closed the dialog
+                        title: 'Project configuration :', // Dialog title
+                        size: [650, 230],
+                        alwaysOnTop: true, // pretty much what the name says
+                        resizable: false, // Don't allow the user to resize the dialog
+                        locationRelativeTo: null, // Place dialog in center of the screen
+                        pack: true,
+                        show: true // Let's show it
+                ) {
+                    vbox { // Put everything below each other
+
+                        hbox {
+
+                            panel(constraints: BorderLayout.CENTER,
+                                    border: compoundBorder([emptyBorder(10), titledBorder('chriffrement')])) {
+
+                                tableLayout(cellpadding: 5) {
+                                    tr {
+                                        td {
+                                            label(text: "Clé de chiffrement:")
+                                        }
+                                        td {
+                                            cle = textField(columns: 60)
+                                        }
+                                    }
+                                    tr {
+                                        td {
+                                            label(text: "Json à chiffrer:")
+                                        }
+                                        td {
+                                            input = textField(columns: 60)
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+
+                        button(defaultButton: true, text: 'OK', actionPerformed: {
+                            toEncrypt = input.text; // Set pass variable to value o
+                            encryptKey = cle.text;
+                            dispose(); // Close dialog
+                        })
+
+                    }// vbox end
+                } // dialog end
+            }
+
+
+            byte[] decodedKey = DatatypeConverter.parseBase64Binary(encryptKey);
+            SecretKeySpec oneySecret = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+
+
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.ENCRYPT_MODE, oneySecret);
+            // Make the encryption
+            byte[] decryptedBytes = toEncrypt.getBytes(StandardCharsets.UTF_8);
+            byte[] encryptedBytes = cipher.doFinal(decryptedBytes);
+        }
+    }
+}
+
+
+task decryt {
+    group = THALES_TASK_GROUP
+
+    gradle.taskGraph.whenReady { taskGraph ->
+
+        def toDecrypt = '';
+        def decryptKey = '';
+
+        doLast {
+            new SwingBuilder().edt {
+                lookAndFeel 'nimbus'
+                dialog(modal: true,// Otherwise the build will continue running before you closed the dialog
+                        title: 'Project configuration :', // Dialog title
+                        size: [650, 230],
+                        alwaysOnTop: true, // pretty much what the name says
+                        resizable: false, // Don't allow the user to resize the dialog
+                        locationRelativeTo: null, // Place dialog in center of the screen
+                        pack: true,
+                        show: true // Let's show it
+                ) {
+                    vbox { // Put everything below each other
+
+                        hbox {
+
+                            panel(constraints: BorderLayout.CENTER,
+                                    border: compoundBorder([emptyBorder(10), titledBorder('chriffrement')])) {
+
+                                tableLayout(cellpadding: 5) {
+                                    tr {
+                                        td {
+                                            label(text: "Clé de déchiffrement:")
+                                        }
+                                        td {
+                                            cle = textField(columns: 60)
+                                        }
+                                    }
+                                    tr {
+                                        td {
+                                            label(text: "Json à déchiffrer:")
+                                        }
+                                        td {
+                                            input = textField(columns: 60)
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+
+                        button(defaultButton: true, text: 'OK', actionPerformed: {
+                            toDecrypt = input.text; // Set pass variable to value o
+                            decryptKey = cle.text;
+                            dispose(); // Close dialog
+                        })
+
+                    }// vbox end
+                } // dialog end
+            }
+
+            byte[] decodedKey = DatatypeConverter.parseBase64Binary(decryptKey);
+            SecretKeySpec oneySecret = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+
+            // Define variables
+            byte[] encryptedMessage = DatatypeConverter.parseBase64Binary(toDecrypt);
+
+            // Initialise a cipher
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, oneySecret); // Make the decryption
+            byte[] decryptedBytes = cipher.doFinal(encryptedMessage);
+        }
+    }
+}
