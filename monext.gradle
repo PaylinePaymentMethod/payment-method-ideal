@@ -16,6 +16,9 @@ repositories {
         }
     }
 }
+ext {
+    releaseDirectoryPath = 'D:/build'
+}
 
 publishing {
     publications {
@@ -43,11 +46,33 @@ publishing {
     }
 }
 
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
+}
+
+plugins.withType(JacocoPlugin) {
+    tasks["test"].finalizedBy 'jacocoTestReport'
+}
+
 sonarqube {
     properties {
-        property "sonar.jacoco.reportPaths", "${project.buildDir}/jacoco/test.exec"
+        property "sonar.coverage.jacoco.xmlReportPaths", "${project.buildDir}/reports/jacoco/test/jacocoTestReport.xml"
         property "sonar.dependencyCheck.reportPath", "${project.buildDir}/reports/dependency-check-report.xml"
         property 'sonar.dependencyCheck.htmlReportPath', "${project.buildDir}/reports/dependency-check-report.html"
+    }
+}
+
+task buildToLocal(type: Copy) {
+    dependsOn shadowJar
+    from shadowJar
+    into "${releaseDirectoryPath}"
+}
+
+task printVersion {
+    doLast {
+        println version
     }
 }
 
