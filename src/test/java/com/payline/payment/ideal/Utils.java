@@ -1,13 +1,10 @@
 package com.payline.payment.ideal;
 
-import com.payline.payment.ideal.exception.PluginException;
 import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
 import com.payline.payment.ideal.utils.constant.FormConfigurationKeys;
 import com.payline.payment.ideal.utils.constant.PartnerConfigurationKeys;
-import com.payline.payment.ideal.utils.http.IdealHttpClient;
 import com.payline.pmapi.bean.common.Amount;
 import com.payline.pmapi.bean.common.Buyer;
-import com.payline.pmapi.bean.common.FailureCause;
 import com.payline.pmapi.bean.configuration.PartnerConfiguration;
 import com.payline.pmapi.bean.configuration.request.ContractParametersCheckRequest;
 import com.payline.pmapi.bean.payment.*;
@@ -15,13 +12,8 @@ import com.payline.pmapi.bean.payment.request.PaymentRequest;
 import com.payline.pmapi.bean.payment.request.RedirectionPaymentRequest;
 import com.payline.pmapi.bean.payment.request.TransactionStatusRequest;
 import com.payline.pmapi.bean.paymentform.request.PaymentFormConfigurationRequest;
-import com.payline.pmapi.logger.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 
@@ -32,10 +24,38 @@ public class Utils {
     public static final String FAILURE_URL = "http://cancelurl.com/";
     public static final String NOTIFICATION_URL = "http://notificationurl.com/";
 
-    private static final Logger LOGGER = LogManager.getLogger(Utils.class);
 
     private static final String URL = "https://abnamro-test.ideal-payment.de/ideal/iDealv3";
     private static final String MERCHANT_ID = "123";
+
+    public static final String PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n" +
+            "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDxpk8erMd4jNY+" +
+            "ULRPpM+x4R81MFt4rPWILrR4PFVNHHZ9X0iGck5CirUq/v0gdXS3rvU3nVfr/Ii4" +
+            "oYnv3+VISsxpWF1HjtY5wwh9zr/kDS6G6mbaVDxthDTh7AS1tnkHHskvAytgfFtS" +
+            "9MxiIarZUPY74vSKfwy2w+HMKMpIMhqQdJPeIy2ftY8sEEMD5wdrZ0LSQVcXNTWq" +
+            "EMLG3RjozmJbUvAMFl7/NV0NWJZzJCjXoWpfAA3y8Ee29AnWYq3eLDyHV8YF5ZZQ" +
+            "NiXzzAI68wqFbPe+o45z8+tKAReBR0VtmZa2sX3IX3ec/5sJKZ9mB1T5oQDMasP4" +
+            "ocRoN88rAgMBAAECggEBAI4lbU83BZNFDVXUtWxQH5icO3ZXPsdqvnfgOWqs2uSk" +
+            "RJMVNJ1Zqe18mHt1SUMJtKHEOhz/4lM/1tD8vR4sjzwKO9oQD7bjL+MEdf9DWh91" +
+            "HZRhWCU//dfSOCVZZ5/YebMVifSsoZx9Kl9O/tcOxOhWtrGdnInHmJv999nXeL4k" +
+            "DlAgr4FTFUsPD+NFGAZVoBHW70aPu84XaH2UM0ipCeEseqqcIPsB2yvYVXtLbHBX" +
+            "2zIJUBGs8kZ+wdzSqBzK4hGZlkd5HVeczH8AKjbhGwIG1OBLkDcc1s/m39T9zN5D" +
+            "S9NWRnXrhkIIIi1em2PSGu2s5wYahsIqMzTWTi31r7ECgYEA/UV0sbeq5rl4ARmQ" +
+            "ntct6DCZShNGuuN9iyu9ToGT7nCBorKmYcdAY3PMxRD2218F0yLGWzt0LtNXsijB" +
+            "6yE8eM+wqVvaPbrYP2t9uacYw7dBPOJqkafJlTP8aOAYCeHiE2UjvhwB5YxDFj61" +
+            "vwrNqMtIUl835ozv2s5XS7vukikCgYEA9EDMtrbfFPfV5yV9nuEcBhJ7rKzX8ax7" +
+            "LF6XxDeap7qyQdpd3i4vn0vEzxQQBvSB62sg/yscH+mRefd8JjcQqNnx51oO1ejn" +
+            "XjZw+dRWh49FJP/BTEysO+cf/EFnygPF12shtHpz6H7YiExtRmfXVUspA+yyV5UJ" +
+            "jCTh0O5LSTMCgYBgmi5hXsHD0TgxizO7Mi3jYy4EsAeJXx3SiHNjT09CYg1AJk4J" +
+            "+3rWtCOFguv1TnAlUR1BTRMKjTfkz2DvszSii+1BG7TJWMwEnJZOyqpKdEpg06d8" +
+            "OPhNfY+n3NmuY0bcyPXyHDKpAG/SO0cNQCyjVi4WpRToThdqaMupKlxbyQKBgGTY" +
+            "BC1D32LW2Dew4Oah5mITa4BldFrRbaFqBJr8ohuyFzrdH3hF9V99dupQTDWy6Zj7" +
+            "CAqSD/CVDH0g0t8sSPKN2TQ9mHZ0zGG3dHmRU5BwdInMFlCcL1gkGq6ZinJ7kEla" +
+            "b/YFwKkzBc9wToWNBfivKWX3acKDRAfaimkqmWbFAoGADjT6nX/3Sf72Or4VBkLS" +
+            "UCcix8t+F1uzNlJeGpwLu8cft/a7Kwoy0HwjKWxfJGPiIX00GYnwGbGjVX9E/T5k" +
+            "/NudozvST8Ufx7Y/gLZTnLm85p+C5XXp7/PyM8ejvYIrz6kTI5iw+Isl4zLRAGCl" +
+            "dLteIAeOuyOwgxdmuSFyGjY=" +
+            "-----END PRIVATE KEY-----";
 
     public static final String PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\n" +
             "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8aZPHqzHeIzWPlC0T6TP" +
@@ -329,21 +349,14 @@ public class Utils {
     }
 
     public static PartnerConfiguration createDefaultPartnerConfiguration() {
-
-        try {
-            String sPrivateKey = new String(Files.readAllBytes(Paths.get(System.getProperty("project.privateKey"))));
-            Map<String, String> map = new HashMap<>();
-            map.put(PartnerConfigurationKeys.URL_ABNAMRO, URL);
-            map.put(PartnerConfigurationKeys.PUBLIC_KEY_ID, "686643AF86B9BC2F442992919092A7B3835990D4");
-            Map<String, String> sensitiveMap = new HashMap<>();
-            sensitiveMap.put(PartnerConfigurationKeys.PRIVATE_KEY, sPrivateKey);
-            sensitiveMap.put(PartnerConfigurationKeys.PUBLIC_KEY, PUBLIC_KEY);
-            sensitiveMap.put(PartnerConfigurationKeys.IDEAL_PUBLIC, IDEAL_PUBLIC_KEY);
-            return new PartnerConfiguration(map, sensitiveMap);
-        } catch (IOException e) {
-            LOGGER.error("Unable to read private key file", e);
-            throw new PluginException(e.getMessage(), FailureCause.INVALID_DATA);
-        }
+        Map<String, String> map = new HashMap<>();
+        map.put(PartnerConfigurationKeys.URL_ABNAMRO, URL);
+        map.put(PartnerConfigurationKeys.PUBLIC_KEY_ID, "686643AF86B9BC2F442992919092A7B3835990D4");
+        Map<String, String> sensitiveMap = new HashMap<>();
+        sensitiveMap.put(PartnerConfigurationKeys.PRIVATE_KEY, PRIVATE_KEY);
+        sensitiveMap.put(PartnerConfigurationKeys.PUBLIC_KEY, PUBLIC_KEY);
+        sensitiveMap.put(PartnerConfigurationKeys.IDEAL_PUBLIC, IDEAL_PUBLIC_KEY);
+        return new PartnerConfiguration(map, sensitiveMap);
     }
 
     public static PaymentFormConfigurationRequest.PaymentFormConfigurationRequestBuilder createDefaultPaymentFormConfigurationRequestBuilder() {

@@ -5,15 +5,42 @@ import com.payline.payment.ideal.utils.security.SignatureUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class SignatureUtilsTest {
     private SignatureUtils signatureUtils = SignatureUtils.getInstance();
+
+    private static final String sPrivateKey = "-----BEGIN PRIVATE KEY-----\n" +
+            "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDxpk8erMd4jNY+" +
+            "ULRPpM+x4R81MFt4rPWILrR4PFVNHHZ9X0iGck5CirUq/v0gdXS3rvU3nVfr/Ii4" +
+            "oYnv3+VISsxpWF1HjtY5wwh9zr/kDS6G6mbaVDxthDTh7AS1tnkHHskvAytgfFtS" +
+            "9MxiIarZUPY74vSKfwy2w+HMKMpIMhqQdJPeIy2ftY8sEEMD5wdrZ0LSQVcXNTWq" +
+            "EMLG3RjozmJbUvAMFl7/NV0NWJZzJCjXoWpfAA3y8Ee29AnWYq3eLDyHV8YF5ZZQ" +
+            "NiXzzAI68wqFbPe+o45z8+tKAReBR0VtmZa2sX3IX3ec/5sJKZ9mB1T5oQDMasP4" +
+            "ocRoN88rAgMBAAECggEBAI4lbU83BZNFDVXUtWxQH5icO3ZXPsdqvnfgOWqs2uSk" +
+            "RJMVNJ1Zqe18mHt1SUMJtKHEOhz/4lM/1tD8vR4sjzwKO9oQD7bjL+MEdf9DWh91" +
+            "HZRhWCU//dfSOCVZZ5/YebMVifSsoZx9Kl9O/tcOxOhWtrGdnInHmJv999nXeL4k" +
+            "DlAgr4FTFUsPD+NFGAZVoBHW70aPu84XaH2UM0ipCeEseqqcIPsB2yvYVXtLbHBX" +
+            "2zIJUBGs8kZ+wdzSqBzK4hGZlkd5HVeczH8AKjbhGwIG1OBLkDcc1s/m39T9zN5D" +
+            "S9NWRnXrhkIIIi1em2PSGu2s5wYahsIqMzTWTi31r7ECgYEA/UV0sbeq5rl4ARmQ" +
+            "ntct6DCZShNGuuN9iyu9ToGT7nCBorKmYcdAY3PMxRD2218F0yLGWzt0LtNXsijB" +
+            "6yE8eM+wqVvaPbrYP2t9uacYw7dBPOJqkafJlTP8aOAYCeHiE2UjvhwB5YxDFj61" +
+            "vwrNqMtIUl835ozv2s5XS7vukikCgYEA9EDMtrbfFPfV5yV9nuEcBhJ7rKzX8ax7" +
+            "LF6XxDeap7qyQdpd3i4vn0vEzxQQBvSB62sg/yscH+mRefd8JjcQqNnx51oO1ejn" +
+            "XjZw+dRWh49FJP/BTEysO+cf/EFnygPF12shtHpz6H7YiExtRmfXVUspA+yyV5UJ" +
+            "jCTh0O5LSTMCgYBgmi5hXsHD0TgxizO7Mi3jYy4EsAeJXx3SiHNjT09CYg1AJk4J" +
+            "+3rWtCOFguv1TnAlUR1BTRMKjTfkz2DvszSii+1BG7TJWMwEnJZOyqpKdEpg06d8" +
+            "OPhNfY+n3NmuY0bcyPXyHDKpAG/SO0cNQCyjVi4WpRToThdqaMupKlxbyQKBgGTY" +
+            "BC1D32LW2Dew4Oah5mITa4BldFrRbaFqBJr8ohuyFzrdH3hF9V99dupQTDWy6Zj7" +
+            "CAqSD/CVDH0g0t8sSPKN2TQ9mHZ0zGG3dHmRU5BwdInMFlCcL1gkGq6ZinJ7kEla" +
+            "b/YFwKkzBc9wToWNBfivKWX3acKDRAfaimkqmWbFAoGADjT6nX/3Sf72Or4VBkLS" +
+            "UCcix8t+F1uzNlJeGpwLu8cft/a7Kwoy0HwjKWxfJGPiIX00GYnwGbGjVX9E/T5k" +
+            "/NudozvST8Ufx7Y/gLZTnLm85p+C5XXp7/PyM8ejvYIrz6kTI5iw+Isl4zLRAGCl" +
+            "dLteIAeOuyOwgxdmuSFyGjY=" +
+            "-----END PRIVATE KEY-----";
 
     private static final String sPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
             "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8aZPHqzHeIzWPlC0T6TP" +
@@ -31,14 +58,10 @@ class SignatureUtilsTest {
             "9GHYmNc+xh/4qhF49zyH0RdffgF7gUSsHn1g4CAC2HeyxTbQlgjWHzuiJf/PWwzGWjtRYhm0aKCH\n" +
             "PUK7aVmQK5ite4Q3bHKL4FrLUQWAjcxgJ8bayA==</SignatureValue><KeyInfo><KeyName>foo</KeyName></KeyInfo></Signature></DirectoryReq>";
 
-
     @Test
-    void getPrivateKeyFromString() throws IOException {
-        String fileName = System.getProperty("project.privateKey");
-        Path path = Paths.get(fileName);
-        String key = new String(Files.readAllBytes(path));
-        PrivateKey privateKey = signatureUtils.getPrivateKeyFromString(key);
+    void getPrivateKeyFromString() {
 
+        PrivateKey privateKey = signatureUtils.getPrivateKeyFromString(sPrivateKey);
         Assertions.assertNotNull(privateKey);
     }
 
@@ -73,22 +96,20 @@ class SignatureUtilsTest {
     }
 
     @Test
-    void signXML() throws IOException {
+    void signXML() {
         String message = "<DirectoryReq xmlns='http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1' version='3.3.1'><createDateTimestamp>2019-07-30T08:16:03.574Z</createDateTimestamp><Merchant><merchantID>003087616</merchantID><subID>0</subID></Merchant></DirectoryReq>";
 
         // get key pair
-        String sPrivateKey = new String(Files.readAllBytes(Paths.get(System.getProperty("project.privateKey"))));
         PrivateKey privateKey = signatureUtils.getPrivateKeyFromString(sPrivateKey);
         PublicKey publicKey = signatureUtils.getPublicKeyFromString(sPublicKey);
 
         String body = signatureUtils.signXML(message, publicKey, "foo", privateKey);
-        Assertions.assertEquals(signedReference, body.replace("&#13;", ""));
+        assertEquals(signedReference.replaceAll("\\s+", ""),body.replace("&#13;", "").replaceAll("\\s+", ""));
     }
 
     @Test
-    void signXMLwithNullMessage() throws IOException {
+    void signXMLwithNullMessage() {
         // get key pair
-        String sPrivateKey = new String(Files.readAllBytes(Paths.get(System.getProperty("project.privateKey"))));
         PrivateKey privateKey = signatureUtils.getPrivateKeyFromString(sPrivateKey);
         PublicKey publicKey = signatureUtils.getPublicKeyFromString(sPublicKey);
         Assertions.assertThrows(PluginException.class, () -> signatureUtils.signXML(null, publicKey, "foo", privateKey));
@@ -105,7 +126,6 @@ class SignatureUtilsTest {
     @Test
     void signXMLwithWrongXML() throws Exception {
         // get key pair
-        String sPrivateKey = new String(Files.readAllBytes(Paths.get(System.getProperty("project.privateKey"))));
         PrivateKey privateKey = signatureUtils.getPrivateKeyFromString(sPrivateKey);
         PublicKey publicKey = signatureUtils.getPublicKeyFromString(sPublicKey);
 
