@@ -3,8 +3,10 @@ package com.payline.payment.ideal.service;
 import com.payline.payment.ideal.bean.Merchant;
 import com.payline.payment.ideal.bean.Transaction;
 import com.payline.payment.ideal.bean.request.IdealStatusRequest;
+import com.payline.payment.ideal.exception.InvalidDataException;
 import com.payline.payment.ideal.utils.PluginUtils;
 import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
+import com.payline.payment.ideal.utils.constant.RequestContextKeys;
 import com.payline.pmapi.bean.payment.request.RedirectionPaymentRequest;
 import com.payline.pmapi.bean.payment.request.TransactionStatusRequest;
 
@@ -32,9 +34,16 @@ public class IdealStatusRequestService {
                 request.getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_ID_KEY).getValue()
                 , subId);
 
-        // in RedirectionPaymentRequests, field 'transactionId' is the partner transactionId
-        Transaction transaction = Transaction.builder()
-                .transactionId(request.getTransactionId())
+        if (request.getRequestContext() == null
+                || request.getRequestContext().getRequestData() == null
+                || request.getRequestContext().getRequestData().get(RequestContextKeys.PARTNER_TRANSACTION_ID) == null) {
+            throw new InvalidDataException("Partner Transaction Id is not filled");
+        }
+
+        final String transactionId = request.getRequestContext().getRequestData().get(RequestContextKeys.PARTNER_TRANSACTION_ID);
+
+        final Transaction transaction = Transaction.builder()
+                .transactionId(transactionId)
                 .build();
 
         return new IdealStatusRequest(merchant,transaction);

@@ -9,13 +9,13 @@ import com.payline.payment.ideal.bean.Transaction;
 
 @JacksonXmlRootElement(localName = "AcquirerTrxReq", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
 public class IdealPaymentRequest extends IdealBean {
-    @JacksonXmlProperty(localName = "Issuer")
+    @JacksonXmlProperty(localName = "Issuer", namespace= "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private Issuer issuer;
 
-    @JacksonXmlProperty(localName = "Merchant")
+    @JacksonXmlProperty(localName = "Merchant", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private Merchant merchant;
 
-    @JacksonXmlProperty(localName = "Transaction")
+    @JacksonXmlProperty(localName = "Transaction",  namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private Transaction transaction;
 
     public IdealPaymentRequest(Issuer issuer, Merchant merchant, Transaction transaction) {

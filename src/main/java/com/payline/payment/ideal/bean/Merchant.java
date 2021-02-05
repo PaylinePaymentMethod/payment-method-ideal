@@ -9,18 +9,18 @@ import lombok.NonNull;
 
 @Getter
 @NoArgsConstructor
-@JacksonXmlRootElement(localName = "Merchant")
+@JacksonXmlRootElement(localName = "Merchant", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
 public class Merchant {
 
-    @JacksonXmlProperty(localName = "merchantID")
+    @JacksonXmlProperty(localName = "merchantID", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     @NonNull
     private String merchantId;
 
-    @JacksonXmlProperty(localName = "subID")
+    @JacksonXmlProperty(localName = "subID", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     @NonNull
     private String subId;
 
-    @JacksonXmlProperty(localName = "merchantReturnURL")
+    @JacksonXmlProperty(localName = "merchantReturnURL", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String merchantReturnURL;
 
 

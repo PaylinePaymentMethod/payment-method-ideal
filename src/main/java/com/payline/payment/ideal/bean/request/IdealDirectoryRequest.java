@@ -12,7 +12,7 @@ import com.payline.pmapi.bean.payment.ContractConfiguration;
 @JacksonXmlRootElement(localName = "DirectoryReq", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
 public class IdealDirectoryRequest extends IdealBean {
 
-    @JacksonXmlProperty(localName = "Merchant")
+    @JacksonXmlProperty(localName = "Merchant", namespace="http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private Merchant merchant;
 
     public IdealDirectoryRequest() {
@@ -31,6 +31,7 @@ public class IdealDirectoryRequest extends IdealBean {
 
     public IdealDirectoryRequest(ContractConfiguration configuration) {
         super();
+
 
         String subId = configuration.getProperty(ContractConfigurationKeys.MERCHANT_SUBID_KEY).getValue();
         if (PluginUtils.isEmpty(subId)) subId = "0";

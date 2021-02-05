@@ -3,6 +3,7 @@ package com.payline.payment.ideal;
 import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
 import com.payline.payment.ideal.utils.constant.FormConfigurationKeys;
 import com.payline.payment.ideal.utils.constant.PartnerConfigurationKeys;
+import com.payline.payment.ideal.utils.constant.RequestContextKeys;
 import com.payline.pmapi.bean.common.Amount;
 import com.payline.pmapi.bean.common.Buyer;
 import com.payline.pmapi.bean.configuration.PartnerConfiguration;
@@ -310,7 +311,7 @@ public class Utils {
 
     public static PaymentFormContext createPaymentFormContext(){
         Map<String, String> map = new HashMap<>();
-        map.put(FormConfigurationKeys.ISSUER_ID, "RABONL2UXXX");
+        map.put(FormConfigurationKeys.BANK, "RABONL2UXXX");
 
         return PaymentFormContext.PaymentFormContextBuilder.aPaymentFormContext()
                 .withPaymentFormParameter(map)
@@ -372,9 +373,11 @@ public class Utils {
 
     //Cree une redirection payment par defaut
     public static RedirectionPaymentRequest createCompleteRedirectionPayment(String transactionId) {
+        final Map<String, String> requestData = new HashMap<>();
+        requestData.put(RequestContextKeys.PARTNER_TRANSACTION_ID, transactionId);
         final RequestContext requestContext = RequestContext.RequestContextBuilder
                 .aRequestContext()
-                .withRequestData(null)
+                .withRequestData(requestData)
                 .build();
         return RedirectionPaymentRequest.builder()
                 .withCaptureNow(true)

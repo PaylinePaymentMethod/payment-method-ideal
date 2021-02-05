@@ -160,7 +160,7 @@ public class SignatureUtils {
             KeyInfo keyInfo = keyInfoFactory.newKeyInfo(Collections.singletonList(keyInfoFactory.newKeyName(publicKeyId)));
 
             // convert String to XML Document
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
             documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             documentBuilderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             documentBuilderFactory.setNamespaceAware(true);
@@ -180,7 +180,7 @@ public class SignatureUtils {
             DOMSource domSource = new DOMSource(document);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-            TransformerFactory tf = TransformerFactory.newInstance();
+            final TransformerFactory tf = TransformerFactory.newInstance("com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl", null);
             tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
             tf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
