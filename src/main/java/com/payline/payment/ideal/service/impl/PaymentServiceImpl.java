@@ -4,8 +4,10 @@ import com.payline.payment.ideal.bean.response.IdealPaymentResponse;
 import com.payline.payment.ideal.exception.PluginException;
 import com.payline.payment.ideal.utils.PluginUtils;
 import com.payline.payment.ideal.utils.constant.IdealConstant;
+import com.payline.payment.ideal.utils.constant.RequestContextKeys;
 import com.payline.payment.ideal.utils.http.IdealHttpClient;
 import com.payline.pmapi.bean.common.FailureCause;
+import com.payline.pmapi.bean.payment.RequestContext;
 import com.payline.pmapi.bean.payment.request.PaymentRequest;
 import com.payline.pmapi.bean.payment.response.PaymentResponse;
 import com.payline.pmapi.bean.payment.response.impl.PaymentResponseFailure;
@@ -15,6 +17,8 @@ import lombok.extern.log4j.Log4j2;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 @Log4j2
 public class PaymentServiceImpl implements PaymentService {
@@ -48,11 +52,23 @@ public class PaymentServiceImpl implements PaymentService {
                         .withRequestType(PaymentResponseRedirect.RedirectionRequest.RequestType.GET)
                         .build();
 
+                // request context
+                //On ajoute le partnerTransactionId à la requête afin de pouvoir
+                //retrouver la transaction après la redirection.
+                final Map<String, String> requestData = new HashMap<>();
+                requestData.put(RequestContextKeys.PARTNER_TRANSACTION_ID, partnerTransactionId);
+
+                final RequestContext requestContext = RequestContext.RequestContextBuilder.aRequestContext()
+                        .withRequestData(requestData)
+                        .withSensitiveRequestData(new HashMap<>())
+                        .build();
+
                 return PaymentResponseRedirect.PaymentResponseRedirectBuilder
                         .aPaymentResponseRedirect()
                         .withRedirectionRequest(redirectionRequest)
                         .withPartnerTransactionId(partnerTransactionId)
                         .withStatusCode(IdealConstant.STATUS_OK)
+                        .withRequestContext(requestContext)
                         .build();
 
             }

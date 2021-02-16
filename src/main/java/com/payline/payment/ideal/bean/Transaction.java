@@ -12,39 +12,39 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Getter
 public class Transaction {
-    @JacksonXmlProperty(localName = "transactionCreateDateTimestamp")
+    @JacksonXmlProperty(localName = "transactionCreateDateTimestamp", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String transactionCreateDateTimestamp;
 
-    @JacksonXmlProperty(localName = "transactionID")
+    @JacksonXmlProperty(localName = "transactionID", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String transactionId;
-    @JacksonXmlProperty(localName = "purchaseID")
+    @JacksonXmlProperty(localName = "purchaseID", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String purchaseId;
-    @JacksonXmlProperty(localName = "amount")
+    @JacksonXmlProperty(localName = "amount", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String amount;
-    @JacksonXmlProperty(localName = "currency")
+    @JacksonXmlProperty(localName = "currency", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String currency;
-    @JacksonXmlProperty(localName = "expirationPeriod")
+    @JacksonXmlProperty(localName = "expirationPeriod", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String expirationPeriod;
-    @JacksonXmlProperty(localName = "language")
+    @JacksonXmlProperty(localName = "language", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String language;
-    @JacksonXmlProperty(localName = "description")
+    @JacksonXmlProperty(localName = "description", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String description;
-    @JacksonXmlProperty(localName = "entranceCode")
+    @JacksonXmlProperty(localName = "entranceCode", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String entranceCode;
 
-    @JacksonXmlProperty(localName = "status")
+    @JacksonXmlProperty(localName = "status", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private Status status;
 
-    @JacksonXmlProperty(localName = "statusDateTimestamp")
+    @JacksonXmlProperty(localName = "statusDateTimestamp", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String statusDateTimestamp;
 
-    @JacksonXmlProperty(localName = "consumerName")
+    @JacksonXmlProperty(localName = "consumerName", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String consumerName;
 
-    @JacksonXmlProperty(localName = "consumerIBAN")
+    @JacksonXmlProperty(localName = "consumerIBAN", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String consumerIBAN;
 
-    @JacksonXmlProperty(localName = "consumerBIC")
+    @JacksonXmlProperty(localName = "consumerBIC", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String consumerBIC;
 
     /**

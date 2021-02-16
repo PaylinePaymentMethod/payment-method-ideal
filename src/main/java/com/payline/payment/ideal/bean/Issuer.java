@@ -12,12 +12,12 @@ import lombok.NoArgsConstructor;
 @Getter
 public class Issuer {
 
-    @JacksonXmlProperty(localName = "issuerID")
+    @JacksonXmlProperty(localName = "issuerID", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String issuerId;
 
-    @JacksonXmlProperty(localName = "issuerName")
+    @JacksonXmlProperty(localName = "issuerName", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String issuerName;
 
-    @JacksonXmlProperty(localName = "issuerAuthenticationURL")
+    @JacksonXmlProperty(localName = "issuerAuthenticationURL", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String issuerAuthenticationURL;
 }

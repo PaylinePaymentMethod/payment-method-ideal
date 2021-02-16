@@ -9,10 +9,10 @@ import com.payline.payment.ideal.bean.Transaction;
 @JacksonXmlRootElement(localName = "AcquirerStatusReq", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
 public class IdealStatusRequest extends IdealBean {
 
-    @JacksonXmlProperty(localName = "Merchant")
+    @JacksonXmlProperty(localName = "Merchant", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private Merchant merchant;
 
-    @JacksonXmlProperty(localName = "Transaction")
+    @JacksonXmlProperty(localName = "Transaction", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private Transaction transaction;
 
     public IdealStatusRequest(Merchant merchant,Transaction transaction) {

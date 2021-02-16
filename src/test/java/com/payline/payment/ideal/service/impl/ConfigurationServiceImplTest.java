@@ -5,8 +5,11 @@ import com.payline.payment.ideal.bean.Directory;
 import com.payline.payment.ideal.bean.response.IdealDirectoryResponse;
 import com.payline.payment.ideal.exception.PluginException;
 import com.payline.payment.ideal.utils.XMLUtils;
+import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
+import com.payline.payment.ideal.utils.constant.PartnerConfigurationKeys;
 import com.payline.payment.ideal.utils.http.IdealHttpClient;
 import com.payline.payment.ideal.utils.properties.ReleaseProperties;
+import com.payline.pmapi.bean.configuration.PartnerConfiguration;
 import com.payline.pmapi.bean.configuration.ReleaseInformation;
 import com.payline.pmapi.bean.configuration.parameter.AbstractParameter;
 import com.payline.pmapi.bean.configuration.request.ContractParametersCheckRequest;
@@ -14,9 +17,9 @@ import com.payline.pmapi.bean.configuration.request.RetrievePluginConfigurationR
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.text.SimpleDateFormat;
@@ -110,19 +113,37 @@ class ConfigurationServiceImplTest {
 
     @Test
     void retrievePluginConfiguration() {
+
+        final Map<String, String> configurationMap = new HashMap<>();
+        configurationMap.put(PartnerConfigurationKeys.MERCHANT_ID, "12345");
+        configurationMap.put(PartnerConfigurationKeys.SUBMERCHANT_ID, "0");
+
+        final PartnerConfiguration partnerConfiguration = new PartnerConfiguration(configurationMap, new HashMap<>());
+        final RetrievePluginConfigurationRequest retrievePluginConfigurationRequest = RetrievePluginConfigurationRequest.
+                RetrieveConfigurationRequestBuilder
+                .aRetrieveConfigurationRequest()
+                .withPartnerConfiguration(partnerConfiguration).build();
+
+        final ArgumentCaptor<RetrievePluginConfigurationRequest> captor = ArgumentCaptor.forClass(RetrievePluginConfigurationRequest.class);
         // create mock
-        IdealDirectoryResponse directoryResponse = XMLUtils.getInstance().fromXML(Utils.directoryResponseOK, IdealDirectoryResponse.class);
-        doReturn(directoryResponse).when(httpClient).directoryRequest(any(RetrievePluginConfigurationRequest.class));
+        final IdealDirectoryResponse directoryResponse = XMLUtils.getInstance().fromXML(Utils.directoryResponseOK, IdealDirectoryResponse.class);
+        doReturn(directoryResponse).when(httpClient).directoryRequest(captor.capture());
 
         // call method
-        String pluginConfiguration = service.retrievePluginConfiguration(Mockito.mock(RetrievePluginConfigurationRequest.class));
+        final String pluginConfiguration = service.retrievePluginConfiguration(retrievePluginConfigurationRequest);
 
         // assertions
         Assertions.assertNotNull(pluginConfiguration);
-        Directory directory = XMLUtils.getInstance().fromXML(pluginConfiguration, Directory.class);
+        final Directory directory = XMLUtils.getInstance().fromXML(pluginConfiguration, Directory.class);
 
-        Assertions.assertEquals(2, directory.getCountries().size());
-        Assertions.assertEquals(3, directory.getCountries().get(0).getIssuers().size());
+        assertNotNull(captor.getValue());
+        assertNotNull(captor.getValue().getContractConfiguration());
+        assertNotNull(captor.getValue().getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_ID_KEY));
+        assertEquals("12345", captor.getValue().getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_ID_KEY).getValue());
+        assertEquals("0", captor.getValue().getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_SUBID_KEY).getValue());
+
+        assertEquals(2, directory.getCountries().size());
+        assertEquals(3, directory.getCountries().get(0).getIssuers().size());
     }
 
     @Test

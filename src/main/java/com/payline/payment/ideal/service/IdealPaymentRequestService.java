@@ -36,7 +36,7 @@ public class IdealPaymentRequestService {
         ContractConfiguration configuration = request.getContractConfiguration();
 
         Issuer issuer = Issuer.builder()
-                .issuerId(request.getPaymentFormContext().getPaymentFormParameter().get(FormConfigurationKeys.ISSUER_ID))
+                .issuerId(request.getPaymentFormContext().getPaymentFormParameter().get(FormConfigurationKeys.BANK))
                 .build();
 
         String subId = configuration.getProperty(ContractConfigurationKeys.MERCHANT_SUBID_KEY).getValue();
@@ -51,7 +51,10 @@ public class IdealPaymentRequestService {
                 .amount(PluginUtils.createStringAmount(amount.getAmountInSmallestUnit(), amount.getCurrency()))
                 .currency(amount.getCurrency().getCurrencyCode())
                 .expirationPeriod(EXPIRATION_PERIOD)
-                .language(request.getLocale().getLanguage())
+                //.language(request.getLocale().getLanguage())
+                .language("nl")
+                .description("description1")
+                .entranceCode("D67tyx6rw9IhY71")
                 .build();
         return new IdealPaymentRequest(issuer, merchant, transaction);
     }

@@ -13,6 +13,7 @@ import com.payline.payment.ideal.service.IdealStatusRequestService;
 import com.payline.pmapi.bean.payment.ContractConfiguration;
 import com.payline.pmapi.bean.payment.request.PaymentRequest;
 import com.payline.pmapi.bean.payment.request.RedirectionPaymentRequest;
+import jdk.internal.org.jline.utils.Log;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,7 @@ class XMLUtilsTest {
 
         String s = xmlUtils.toXml(request);
 
+        System.out.println(s);
         Assertions.assertNotNull(s);
         Assertions.assertTrue(s.contains("<Issuer"));
         Assertions.assertTrue(s.contains("<issuerID"));

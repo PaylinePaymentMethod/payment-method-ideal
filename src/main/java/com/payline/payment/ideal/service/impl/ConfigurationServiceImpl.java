@@ -3,6 +3,7 @@ package com.payline.payment.ideal.service.impl;
 import com.payline.payment.ideal.bean.response.IdealDirectoryResponse;
 import com.payline.payment.ideal.utils.XMLUtils;
 import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
+import com.payline.payment.ideal.utils.constant.PartnerConfigurationKeys;
 import com.payline.payment.ideal.utils.http.IdealHttpClient;
 import com.payline.payment.ideal.utils.i18n.I18nService;
 import com.payline.payment.ideal.utils.properties.ReleaseProperties;
@@ -11,6 +12,8 @@ import com.payline.pmapi.bean.configuration.parameter.AbstractParameter;
 import com.payline.pmapi.bean.configuration.parameter.impl.InputParameter;
 import com.payline.pmapi.bean.configuration.request.ContractParametersCheckRequest;
 import com.payline.pmapi.bean.configuration.request.RetrievePluginConfigurationRequest;
+import com.payline.pmapi.bean.payment.ContractConfiguration;
+import com.payline.pmapi.bean.payment.ContractProperty;
 import com.payline.pmapi.service.ConfigurationService;
 import lombok.extern.log4j.Log4j2;
 
@@ -69,7 +72,23 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public String retrievePluginConfiguration(RetrievePluginConfigurationRequest retrievePluginConfigurationRequest) {
         try {
-            IdealDirectoryResponse response = client.directoryRequest(retrievePluginConfigurationRequest);
+            Map<String, ContractProperty> properties = new HashMap<>();
+            final String merchantId = retrievePluginConfigurationRequest
+                    .getPartnerConfiguration().getProperty(PartnerConfigurationKeys.MERCHANT_ID);
+            final String subMerchantId = retrievePluginConfigurationRequest
+                    .getPartnerConfiguration().getProperty(PartnerConfigurationKeys.SUBMERCHANT_ID);
+
+            properties.put(ContractConfigurationKeys.MERCHANT_ID_KEY, new ContractProperty(merchantId));
+            properties.put(ContractConfigurationKeys.MERCHANT_SUBID_KEY, new ContractProperty(subMerchantId));
+
+            ContractConfiguration contractConfiguration = new ContractConfiguration("IDEAL_APM", properties);
+            final RetrievePluginConfigurationRequest request = RetrievePluginConfigurationRequest.
+                    RetrieveConfigurationRequestBuilder.aRetrieveConfigurationRequest()
+                    .withContractConfiguration(contractConfiguration)
+                    .withEnvironment(retrievePluginConfigurationRequest.getEnvironment())
+                    .withPartnerConfiguration(retrievePluginConfigurationRequest.getPartnerConfiguration())
+                    .withPluginConfiguration(retrievePluginConfigurationRequest.getPluginConfiguration()).build();
+            IdealDirectoryResponse response = client.directoryRequest(request);
             if (response.getError() != null) {
                 log.error("Could not retrieve plugin configuration due to a partner error: {}", response.getError().getErrorCode());
                 return retrievePluginConfigurationRequest.getPluginConfiguration();

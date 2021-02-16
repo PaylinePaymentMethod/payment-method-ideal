@@ -14,7 +14,7 @@ public abstract class IdealBean {
     private String version = "3.3.1";
 
 
-    @JacksonXmlProperty(localName = "createDateTimestamp")
+    @JacksonXmlProperty(localName = "createDateTimestamp", namespace ="http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
     private String createDateTimeStamp;
 
     public IdealBean() {
