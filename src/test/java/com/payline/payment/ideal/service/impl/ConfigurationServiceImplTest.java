@@ -2,8 +2,10 @@ package com.payline.payment.ideal.service.impl;
 
 import com.payline.payment.ideal.Utils;
 import com.payline.payment.ideal.bean.Directory;
+import com.payline.payment.ideal.bean.PartnerAcquirer;
 import com.payline.payment.ideal.bean.response.IdealDirectoryResponse;
 import com.payline.payment.ideal.exception.PluginException;
+import com.payline.payment.ideal.utils.JSONUtils;
 import com.payline.payment.ideal.utils.XMLUtils;
 import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
 import com.payline.payment.ideal.utils.constant.PartnerConfigurationKeys;
@@ -115,8 +117,8 @@ class ConfigurationServiceImplTest {
     void retrievePluginConfiguration() {
 
         final Map<String, String> configurationMap = new HashMap<>();
-        configurationMap.put(PartnerConfigurationKeys.MERCHANT_ID, "12345");
-        configurationMap.put(PartnerConfigurationKeys.SUBMERCHANT_ID, "0");
+        configurationMap.put(PartnerConfigurationKeys.ACQUIRERS, "[{\"NAME\":\"BNPP\",\"URL\":\"http://www.urlbnp.com\",\"PUBLIC_KEY\":\"publicKey\",\"IDEAL_PUBLIC\":\"idealPublic\",\"PUBLIC_KEY_ID\":\"publicKeyId\",\"MERCHANT_ID\":\"017001580\",\"SUBMERCHANT_ID\":\"0\"},{\"NAME\":\"ABNAMRO\",\"URL\":\"http://www.abnamro.com\",\"PUBLIC_KEY\":\"publicKey\",\"IDEAL_PUBLIC\":\"abnaMROKey\",\"PUBLIC_KEY_ID\":\"publicKeyId\",\"MERCHANT_ID\":\"01234567\",\"SUBMERCHANT_ID\":\"1\"}]");
+        configurationMap.put(PartnerConfigurationKeys.ACQUIRERS_SENSITIVE_DATA, "[{\"NAME\":\"BNPP\",\"PRIVATE_KEY\":\"privateKeyBNPP\"},{\"NAME\":\"ABNAMRO\",\"PRIVATE_KEY\":\"privateKeyAbnamro\"}]");
 
         final PartnerConfiguration partnerConfiguration = new PartnerConfiguration(configurationMap, new HashMap<>());
         final RetrievePluginConfigurationRequest retrievePluginConfigurationRequest = RetrievePluginConfigurationRequest.
@@ -127,20 +129,24 @@ class ConfigurationServiceImplTest {
         final ArgumentCaptor<RetrievePluginConfigurationRequest> captor = ArgumentCaptor.forClass(RetrievePluginConfigurationRequest.class);
         // create mock
         final IdealDirectoryResponse directoryResponse = XMLUtils.getInstance().fromXML(Utils.directoryResponseOK, IdealDirectoryResponse.class);
-        doReturn(directoryResponse).when(httpClient).directoryRequest(captor.capture());
+        doReturn(directoryResponse).when(httpClient).directoryRequest(captor.capture(), any(PartnerAcquirer.class));
 
         // call method
         final String pluginConfiguration = service.retrievePluginConfiguration(retrievePluginConfigurationRequest);
 
         // assertions
         Assertions.assertNotNull(pluginConfiguration);
-        final Directory directory = XMLUtils.getInstance().fromXML(pluginConfiguration, Directory.class);
+
+        final Map<String, String> directoryMap = JSONUtils.getInstance().fromJSON(pluginConfiguration);
+        assertEquals(2, directoryMap.size());
+
+        final Directory directory = XMLUtils.getInstance().fromXML(directoryMap.get("BNPP"), Directory.class);
 
         assertNotNull(captor.getValue());
         assertNotNull(captor.getValue().getContractConfiguration());
         assertNotNull(captor.getValue().getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_ID_KEY));
-        assertEquals("12345", captor.getValue().getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_ID_KEY).getValue());
-        assertEquals("0", captor.getValue().getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_SUBID_KEY).getValue());
+        assertEquals("01234567", captor.getValue().getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_ID_KEY).getValue());
+        assertEquals("1", captor.getValue().getContractConfiguration().getProperty(ContractConfigurationKeys.MERCHANT_SUBID_KEY).getValue());
 
         assertEquals(2, directory.getCountries().size());
         assertEquals(3, directory.getCountries().get(0).getIssuers().size());
@@ -154,7 +160,7 @@ class ConfigurationServiceImplTest {
                 .withPluginConfiguration("foo")
                 .build();
         IdealDirectoryResponse directoryResponse = XMLUtils.getInstance().fromXML(Utils.errorResponse, IdealDirectoryResponse.class);
-        doReturn(directoryResponse).when(httpClient).directoryRequest(any(RetrievePluginConfigurationRequest.class));
+        doReturn(directoryResponse).when(httpClient).directoryRequest(any(RetrievePluginConfigurationRequest.class), any(PartnerAcquirer.class));
 
         // call method
         String pluginConfiguration = service.retrievePluginConfiguration(pluginConfigurationRequest);
@@ -170,7 +176,7 @@ class ConfigurationServiceImplTest {
                 .aRetrieveConfigurationRequest()
                 .withPluginConfiguration("foo")
                 .build();
-        doThrow(new PluginException("bar")).when(httpClient).directoryRequest(any(RetrievePluginConfigurationRequest.class));
+        doThrow(new PluginException("bar")).when(httpClient).directoryRequest(any(RetrievePluginConfigurationRequest.class), any(PartnerAcquirer.class));
 
         // call method
         String pluginConfiguration = service.retrievePluginConfiguration(pluginConfigurationRequest);

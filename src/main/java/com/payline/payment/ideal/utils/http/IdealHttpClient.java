@@ -1,6 +1,7 @@
 package com.payline.payment.ideal.utils.http;
 
 import com.payline.payment.ideal.bean.IdealBean;
+import com.payline.payment.ideal.bean.PartnerAcquirer;
 import com.payline.payment.ideal.bean.request.IdealDirectoryRequest;
 import com.payline.payment.ideal.bean.request.IdealPaymentRequest;
 import com.payline.payment.ideal.bean.request.IdealStatusRequest;
@@ -78,6 +79,21 @@ public class IdealHttpClient extends AbstractHttpClient {
      * Create the request body needed by the API
      *
      * @param request       the Object to create the body from
+     * @param partnerAcquirer contain all data needed to sign the document
+     * @return an XML body signed
+     */
+    String createBody(final IdealBean request, final PartnerAcquirer partnerAcquirer) {
+        String xmlBody = xmlUtils.toXml(request);
+        PublicKey publicKey = signatureUtils.getPublicKeyFromString(partnerAcquirer.getPublicKey());
+        String publicKeyId = partnerAcquirer.getPublicKeyId();
+        PrivateKey privateKey = signatureUtils.getPrivateKeyFromString(partnerAcquirer.getPrivateKey());
+        return signatureUtils.signXML(xmlBody, publicKey, publicKeyId, privateKey);
+    }
+
+    /**
+     * Create the request body needed by the API
+     *
+     * @param request       the Object to create the body from
      * @param configuration contain all data needed to sign the document
      * @return an XML body signed
      */
@@ -88,7 +104,6 @@ public class IdealHttpClient extends AbstractHttpClient {
         PrivateKey privateKey = signatureUtils.getPrivateKeyFromString(configuration.getProperty(PartnerConfigurationKeys.PRIVATE_KEY));
         return signatureUtils.signXML(xmlBody, publicKey, publicKeyId, privateKey);
     }
-
 
     /**
      * Extract info in ContractParametersCheckRequest to call directoryRequest
@@ -107,9 +122,38 @@ public class IdealHttpClient extends AbstractHttpClient {
      * @param request
      * @return the response of the directoryRequestHttp call
      */
-    public IdealDirectoryResponse directoryRequest(RetrievePluginConfigurationRequest request) {
+    public IdealDirectoryResponse directoryRequest(RetrievePluginConfigurationRequest request, PartnerAcquirer partnerAcquirer) {
         IdealDirectoryRequest directoryRequest = new IdealDirectoryRequest(request.getContractConfiguration());
-        return this.directoryRequest(directoryRequest, request.getPartnerConfiguration());
+        return this.directoryRequest(directoryRequest, partnerAcquirer);
+    }
+
+    /**
+     * Prepare then call the Directory Request API
+     *
+     * @param directoryRequest
+     * @param partnerAcquirer
+     * @return
+     */
+    private IdealDirectoryResponse directoryRequest(final IdealDirectoryRequest directoryRequest, final PartnerAcquirer partnerAcquirer) {
+        // get url
+        String url = partnerAcquirer.getUrl();
+
+        // create headers
+        Header[] headers = createHeaders();
+
+        // create body
+        String signedXmlBody = this.createBody(directoryRequest, partnerAcquirer);
+
+        // do the call
+        StringResponse response = super.doPost(url, "", headers, new StringEntity(signedXmlBody, Charset.defaultCharset()));
+
+        // check the response status
+        checkResponse(response);
+
+        // check the response signature
+        PublicKey idealPublicKey = signatureUtils.getPublicKeyFromString(partnerAcquirer.getIdealPublicKey());
+        signatureUtils.verifySignatureXML(response.getContent(), idealPublicKey);
+        return xmlUtils.fromXML(response.getContent(), IdealDirectoryResponse.class);
     }
 
     /**
@@ -140,7 +184,6 @@ public class IdealHttpClient extends AbstractHttpClient {
         signatureUtils.verifySignatureXML(response.getContent(), idealPublicKey);
         return xmlUtils.fromXML(response.getContent(), IdealDirectoryResponse.class);
     }
-
 
     /**
      * Prepare then call the Transaction Request API
