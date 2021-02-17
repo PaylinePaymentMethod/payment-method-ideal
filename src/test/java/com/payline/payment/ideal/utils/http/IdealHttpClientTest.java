@@ -1,6 +1,7 @@
 package com.payline.payment.ideal.utils.http;
 
 import com.payline.payment.ideal.Utils;
+import com.payline.payment.ideal.bean.PartnerAcquirer;
 import com.payline.payment.ideal.bean.request.IdealDirectoryRequest;
 import com.payline.payment.ideal.bean.response.IdealDirectoryResponse;
 import com.payline.payment.ideal.bean.response.IdealPaymentResponse;
@@ -9,6 +10,7 @@ import com.payline.payment.ideal.exception.PluginException;
 import com.payline.payment.ideal.utils.XMLUtils;
 import com.payline.payment.ideal.utils.security.SignatureUtils;
 import com.payline.pmapi.bean.common.FailureCause;
+import com.payline.pmapi.bean.configuration.PartnerConfiguration;
 import com.payline.pmapi.bean.configuration.request.ContractParametersCheckRequest;
 import com.payline.pmapi.bean.payment.request.PaymentRequest;
 import com.payline.pmapi.bean.payment.request.TransactionStatusRequest;
@@ -63,7 +65,7 @@ class IdealHttpClientTest {
         StringResponse stringResponse = mockStringResponse(200, null, Utils.directoryResponseOK, null);
 
 
-        doReturn("hello").when(client).createBody(any(), any());
+        doReturn("hello").when(client).createBody(any(), any(PartnerAcquirer.class));
         doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
 
@@ -85,7 +87,7 @@ class IdealHttpClientTest {
         // init mock
         StringResponse stringResponse = mockStringResponse(200, null, Utils.errorResponse, null);
 
-        doReturn("hello").when(client).createBody(any(), any());
+        doReturn("hello").when(client).createBody(any(), any(PartnerAcquirer.class));
         doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
 
@@ -109,7 +111,7 @@ class IdealHttpClientTest {
         StringResponse stringResponse = mockStringResponse(200, null, Utils.TransactionResponse, null);
         IdealPaymentResponse expectedResponse = xmlUtils.fromXML(stringResponse.getContent(), IdealPaymentResponse.class);
 
-        doReturn("hello").when(client).createBody(any(), any());
+        doReturn("hello").when(client).createBody(any(), any(PartnerConfiguration.class));
         doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
 
@@ -133,7 +135,7 @@ class IdealHttpClientTest {
         StringResponse stringResponse = mockStringResponse(200, null, Utils.statusResponseOK, null);
         IdealStatusResponse expectedResponse = xmlUtils.fromXML(stringResponse.getContent(), IdealStatusResponse.class);
 
-        doReturn("hello").when(client).createBody(any(), any());
+        doReturn("hello").when(client).createBody(any(), any(PartnerConfiguration.class));
         doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
 
