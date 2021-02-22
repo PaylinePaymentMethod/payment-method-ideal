@@ -51,8 +51,7 @@ public class IdealPaymentRequestService {
                 .amount(PluginUtils.createStringAmount(amount.getAmountInSmallestUnit(), amount.getCurrency()))
                 .currency(amount.getCurrency().getCurrencyCode())
                 .expirationPeriod(EXPIRATION_PERIOD)
-                //.language(request.getLocale().getLanguage())
-                .language("nl")
+                .language(request.getLocale().getLanguage())
                 .description("description1")
                 .entranceCode("D67tyx6rw9IhY71")
                 .build();
