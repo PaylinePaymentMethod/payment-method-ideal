@@ -6,6 +6,7 @@ plugins {
     id "org.owasp.dependencycheck" version "5.3.2.1"
 }
 
+apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'java-library'
 apply plugin: 'jacoco'
@@ -47,25 +48,6 @@ dependencies {
     testImplementation group: 'org.seleniumhq.selenium', name: 'selenium-support', version: seleniumVersion
 }
 
-dependencyCheck {
-    format 'ALL'
-    skipConfigurations = ['jacocoAgent', 'jacocoAnt', 'annotationProcessor', 'axisGenAntTask', 'jaxws', 'execJar', 'jaxb', 'generateSources']
-}
-
-assemble.dependsOn shadowJar
-
-shadowJar {
-    dependencies {
-        exclude(dependency('com.payline:payment-method-api'))
-        exclude(dependency('org.apache.logging.log4j:log4j-api'))
-        exclude(dependency('org.apache.logging.log4j:log4j-core'))
-        exclude(dependency('org.junit.jupiter:junit-jupiter-api'))
-        exclude(dependency('org.mockito:mockito-core'))
-        exclude(dependency('org.seleniumhq.selenium:selenium-server'))
-        exclude(dependency('org.seleniumhq.selenium:selenium-support'))
-    }
-}
-
 jar {
     manifest {
         attributes(
@@ -79,6 +61,22 @@ jar {
         )
     }
 }
+
+assemble.dependsOn shadowJar
+
+shadowJar {
+    classifier = ''
+    dependencies {
+        exclude(dependency('com.payline:payment-method-api'))
+        exclude(dependency('org.apache.logging.log4j:log4j-api'))
+        exclude(dependency('org.apache.logging.log4j:log4j-core'))
+        exclude(dependency('org.junit.jupiter:junit-jupiter-api'))
+        exclude(dependency('org.mockito:mockito-core'))
+        exclude(dependency('org.seleniumhq.selenium:selenium-server'))
+        exclude(dependency('org.seleniumhq.selenium:selenium-support'))
+    }
+}
+
 
 /* Replace tokens in resources files after compilation */
 processResources {
@@ -94,6 +92,7 @@ test {
     useJUnitPlatform()
     exclude('**/*IT.class')
 }
+
 
 dependencyCheck {
     format 'ALL'

@@ -23,12 +23,15 @@ ext {
 publishing {
     publications {
         shadow(MavenPublication) { publication ->
-            project.shadow.component(publication)
+            from project.shadow.component(publication)
+            // On modifie l'artifactId pour qu'il correspond au CARDCODE et soit publié dans le bon repo pour etre utiliser via le CA...
+            artifactId = 'payment-method-ideal-v2'
+            groupId 'com.payline.payment.ideal-v2'
 
             // For release only
-            if (!project.version.contains('-')) {
-                artifact testJar
-            }
+            //if (!project.version.contains('-')) {
+            //    artifact testJar
+            //}
         }
     }
     repositories {
@@ -73,20 +76,5 @@ task buildToLocal(type: Copy) {
 task printVersion {
     doLast {
         println version
-    }
-}
-
-buildscript {
-    repositories {
-        maven {
-            url "https://nexus.intra.monext.fr:10130/nexus/content/groups/public"
-            credentials {
-                username mavenUser
-                password mavenPassword
-            }
-        }
-    }
-    dependencies {
-        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.1'
     }
 }

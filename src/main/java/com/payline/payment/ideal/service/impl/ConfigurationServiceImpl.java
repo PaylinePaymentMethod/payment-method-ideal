@@ -81,7 +81,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             properties.put(ContractConfigurationKeys.MERCHANT_ID_KEY, new ContractProperty(merchantId));
             properties.put(ContractConfigurationKeys.MERCHANT_SUBID_KEY, new ContractProperty(subMerchantId));
 
-            ContractConfiguration contractConfiguration = new ContractConfiguration("IDEAL_APM", properties);
+            ContractConfiguration contractConfiguration = new ContractConfiguration("IDEAL_V2", properties);
             final RetrievePluginConfigurationRequest request = RetrievePluginConfigurationRequest.
                     RetrieveConfigurationRequestBuilder.aRetrieveConfigurationRequest()
                     .withContractConfiguration(contractConfiguration)

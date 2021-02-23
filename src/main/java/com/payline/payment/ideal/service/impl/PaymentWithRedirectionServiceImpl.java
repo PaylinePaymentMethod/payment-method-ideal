@@ -5,11 +5,14 @@ import com.payline.payment.ideal.bean.response.IdealStatusResponse;
 import com.payline.payment.ideal.exception.PluginException;
 import com.payline.payment.ideal.utils.PluginUtils;
 import com.payline.payment.ideal.utils.http.IdealHttpClient;
+import com.payline.pmapi.bean.common.Buyer;
 import com.payline.pmapi.bean.common.FailureCause;
 import com.payline.pmapi.bean.common.OnHoldCause;
 import com.payline.pmapi.bean.payment.request.RedirectionPaymentRequest;
 import com.payline.pmapi.bean.payment.request.TransactionStatusRequest;
 import com.payline.pmapi.bean.payment.response.PaymentResponse;
+import com.payline.pmapi.bean.payment.response.buyerpaymentidentifier.BankAccount;
+import com.payline.pmapi.bean.payment.response.buyerpaymentidentifier.impl.BankTransfer;
 import com.payline.pmapi.bean.payment.response.buyerpaymentidentifier.impl.EmptyTransactionDetails;
 import com.payline.pmapi.bean.payment.response.impl.PaymentResponseFailure;
 import com.payline.pmapi.bean.payment.response.impl.PaymentResponseOnHold;
@@ -26,7 +29,7 @@ public class PaymentWithRedirectionServiceImpl implements PaymentWithRedirection
         String partnerTransactionId = redirectionPaymentRequest.getTransactionId();
         try {
             IdealStatusResponse response = client.statusRequest(redirectionPaymentRequest);
-            return this.handleResponse(partnerTransactionId, response);
+            return this.handleResponse(partnerTransactionId, response, redirectionPaymentRequest.getBuyer());
 
         } catch (PluginException e) {
             return e.toPaymentResponseFailureBuilder()
@@ -50,7 +53,7 @@ public class PaymentWithRedirectionServiceImpl implements PaymentWithRedirection
         String partnerTransactionId = transactionStatusRequest.getTransactionId();
         try {
             IdealStatusResponse response = client.statusRequest(transactionStatusRequest);
-            return handleResponse(partnerTransactionId, response);
+            return handleResponse(partnerTransactionId, response, transactionStatusRequest.getBuyer());
 
         } catch (PluginException e) {
             return e.toPaymentResponseFailureBuilder()
@@ -68,7 +71,7 @@ public class PaymentWithRedirectionServiceImpl implements PaymentWithRedirection
         }
     }
 
-    PaymentResponse handleResponse(String partnerTransactionId, IdealStatusResponse response) {
+    PaymentResponse handleResponse(String partnerTransactionId, final IdealStatusResponse response, final Buyer buyer) {
         if (response.getError() != null) {
             String errorCode = response.getError().getErrorCode();
             log.info("an error occurred: {}",response.getError());
@@ -86,12 +89,15 @@ public class PaymentWithRedirectionServiceImpl implements PaymentWithRedirection
             // check the status response: "SUCCESS", "OPEN", other...
             Transaction.Status status = response.getTransaction().getStatus();
             if (Transaction.Status.SUCCESS.equals(status)) {
+
+                final BankTransfer bankTransfer = buildBankTransfer(response, buyer);
+
                 return PaymentResponseSuccess.PaymentResponseSuccessBuilder
                         .aPaymentResponseSuccess()
                         .withPartnerTransactionId(partnerTransactionId)
                         .withStatusCode(status.name())
                         .withTransactionAdditionalData(response.getTransaction().getConsumerIBAN())
-                        .withTransactionDetails(new EmptyTransactionDetails())
+                        .withTransactionDetails(bankTransfer)
                         .build();
             } else if (Transaction.Status.OPEN.equals(status)) {
                 return PaymentResponseOnHold.PaymentResponseOnHoldBuilder
@@ -123,5 +129,26 @@ public class PaymentWithRedirectionServiceImpl implements PaymentWithRedirection
 
     }
 
-
+    protected BankTransfer buildBankTransfer(final IdealStatusResponse response, final Buyer buyer) {
+        final BankAccount.BankAccountBuilder owner = BankAccount.BankAccountBuilder.aBankAccount();
+        if (buyer != null && buyer.getFullName() != null) {
+            final Buyer.FullName fullName = buyer.getFullName();
+            if (fullName.getLastName() != null && fullName.getFirstName() != null) {
+                owner.withHolder(fullName.getLastName() + " " + fullName.getFirstName());
+            } else if (fullName.getLastName() != null) {
+                owner.withHolder(fullName.getLastName());
+            } else if (fullName.getFirstName() != null) {
+                owner.withHolder(fullName.getFirstName());
+            }else {
+                owner.withHolder("");
+            }
+        }
+        owner.withIban(response.getTransaction().getConsumerIBAN());
+        owner.withBic(response.getTransaction().getConsumerBIC());
+        owner.withAccountNumber("");
+        owner.withBankCode("");
+        owner.withBankName("");
+        owner.withCountryCode("");
+        return new BankTransfer(owner.build(), null);
+    }
 }

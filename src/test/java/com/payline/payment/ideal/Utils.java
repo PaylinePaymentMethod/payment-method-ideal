@@ -413,4 +413,10 @@ public class Utils {
                 .withBuyer(buyer)
                 .withPartnerConfiguration(createDefaultPartnerConfiguration());
     }
+
+
+    public static Buyer createBuyer() {
+        final Buyer.FullName fullName = new Buyer.FullName("FirstName", "LastName", "Mr");
+        return Buyer.BuyerBuilder.aBuyer().withFullName(fullName).build();
+    }
 }
