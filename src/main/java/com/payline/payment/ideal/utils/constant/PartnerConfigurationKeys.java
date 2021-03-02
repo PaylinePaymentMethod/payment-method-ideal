@@ -2,7 +2,7 @@ package com.payline.payment.ideal.utils.constant;
 
 
 public class PartnerConfigurationKeys {
-    public static final String URL_ABNAMRO = "URL_ABNAMRO";
+    public static final String URL_PARTNER = "URL";
     public static final String PUBLIC_KEY = "PUBLIC_KEY";
     public static final String IDEAL_PUBLIC = "IDEAL_PUBLIC";
     public static final String PRIVATE_KEY = "PRIVATE_KEY";

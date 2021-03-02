@@ -6,16 +6,17 @@ import com.payline.payment.ideal.bean.IdealBean;
 import com.payline.payment.ideal.bean.Issuer;
 import com.payline.payment.ideal.bean.Merchant;
 import com.payline.payment.ideal.bean.Transaction;
+import com.payline.payment.ideal.utils.constant.IdealConstant;
 
-@JacksonXmlRootElement(localName = "AcquirerTrxReq", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+@JacksonXmlRootElement(localName = "AcquirerTrxReq", namespace = IdealConstant.IDEAL_NAMESPACE)
 public class IdealPaymentRequest extends IdealBean {
-    @JacksonXmlProperty(localName = "Issuer", namespace= "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+    @JacksonXmlProperty(localName = "Issuer", namespace = IdealConstant.IDEAL_NAMESPACE)
     private Issuer issuer;
 
-    @JacksonXmlProperty(localName = "Merchant", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+    @JacksonXmlProperty(localName = "Merchant", namespace = IdealConstant.IDEAL_NAMESPACE)
     private Merchant merchant;
 
-    @JacksonXmlProperty(localName = "Transaction",  namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+    @JacksonXmlProperty(localName = "Transaction", namespace = IdealConstant.IDEAL_NAMESPACE)
     private Transaction transaction;
 
     public IdealPaymentRequest(Issuer issuer, Merchant merchant, Transaction transaction) {

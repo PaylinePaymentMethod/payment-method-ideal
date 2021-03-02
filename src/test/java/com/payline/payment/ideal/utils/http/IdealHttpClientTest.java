@@ -7,7 +7,9 @@ import com.payline.payment.ideal.bean.response.IdealDirectoryResponse;
 import com.payline.payment.ideal.bean.response.IdealPaymentResponse;
 import com.payline.payment.ideal.bean.response.IdealStatusResponse;
 import com.payline.payment.ideal.exception.PluginException;
+import com.payline.payment.ideal.service.impl.PartnerConfigurationService;
 import com.payline.payment.ideal.utils.XMLUtils;
+import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
 import com.payline.payment.ideal.utils.security.SignatureUtils;
 import com.payline.pmapi.bean.common.FailureCause;
 import com.payline.pmapi.bean.configuration.PartnerConfiguration;
@@ -33,6 +35,9 @@ import static org.mockito.Mockito.*;
 
 class IdealHttpClientTest {
     private String signedResponse = "foo";
+
+    @Mock
+    private PartnerConfigurationService partnerConfigurationService;
 
     @InjectMocks
     @Spy
@@ -63,16 +68,20 @@ class IdealHttpClientTest {
     void directoryRequest() throws Exception {
         // init mock
         StringResponse stringResponse = mockStringResponse(200, null, Utils.directoryResponseOK, null);
+        final PartnerAcquirer partnerAcquirer = new PartnerAcquirer();
+        partnerAcquirer.setUrl("http://www.monext.net");
 
 
+        doReturn(partnerAcquirer).when(partnerConfigurationService).getPartnerAcquirer(any(), anyString());
         doReturn("hello").when(client).createBody(any(), any(PartnerAcquirer.class));
         doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
 
 
         // call method
-        ContractParametersCheckRequest contractParametersCheckRequest = Utils.createContractParametersCheckRequest();
-        IdealDirectoryResponse response = client.directoryRequest(contractParametersCheckRequest);
+        final ContractParametersCheckRequest contractParametersCheckRequest = Utils.createContractParametersCheckRequest();
+        contractParametersCheckRequest.getAccountInfo().put(ContractConfigurationKeys.ACQUIRER_ID, "acquirerId");
+        final IdealDirectoryResponse response = client.directoryRequest(contractParametersCheckRequest);
 
         // assertions
         Assertions.assertNotNull(response);
@@ -86,14 +95,18 @@ class IdealHttpClientTest {
     void directoryRequestWithError() throws Exception {
         // init mock
         StringResponse stringResponse = mockStringResponse(200, null, Utils.errorResponse, null);
-
+        final PartnerAcquirer partnerAcquirer = new PartnerAcquirer();
+        partnerAcquirer.setUrl("http://www.monext.net");
+        doReturn(partnerAcquirer).when(partnerConfigurationService).getPartnerAcquirer(any(), anyString());
         doReturn("hello").when(client).createBody(any(), any(PartnerAcquirer.class));
         doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
 
         // call method
-        ContractParametersCheckRequest contractParametersCheckRequest = Utils.createContractParametersCheckRequest();
-        IdealDirectoryResponse response = client.directoryRequest(contractParametersCheckRequest);
+        final ContractParametersCheckRequest contractParametersCheckRequest = Utils.createContractParametersCheckRequest();
+        contractParametersCheckRequest.getAccountInfo().put(ContractConfigurationKeys.ACQUIRER_ID, "acquirerId");
+
+        final IdealDirectoryResponse response = client.directoryRequest(contractParametersCheckRequest);
 
         // assertions
         Assertions.assertNotNull(response);
@@ -110,10 +123,13 @@ class IdealHttpClientTest {
         // init mock
         StringResponse stringResponse = mockStringResponse(200, null, Utils.TransactionResponse, null);
         IdealPaymentResponse expectedResponse = xmlUtils.fromXML(stringResponse.getContent(), IdealPaymentResponse.class);
+        final PartnerAcquirer partnerAcquirer = new PartnerAcquirer();
+        partnerAcquirer.setUrl("http://www.google.com");
 
         doReturn("hello").when(client).createBody(any(), any(PartnerConfiguration.class));
-        doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
+        doReturn(stringResponse).when(client).getStringResponse(eq(partnerAcquirer.getUrl()), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
+        doReturn(partnerAcquirer).when(client).fetchPartnerAcquirer(any(), any());
 
         // call method
         PaymentRequest request = Utils.createCompletePaymentBuilder().build();
@@ -134,10 +150,13 @@ class IdealHttpClientTest {
         // init mock
         StringResponse stringResponse = mockStringResponse(200, null, Utils.statusResponseOK, null);
         IdealStatusResponse expectedResponse = xmlUtils.fromXML(stringResponse.getContent(), IdealStatusResponse.class);
+        final PartnerAcquirer partnerAcquirer = new PartnerAcquirer();
+        partnerAcquirer.setUrl("http://www.google.com");
 
         doReturn("hello").when(client).createBody(any(), any(PartnerConfiguration.class));
-        doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
+        doReturn(stringResponse).when(client).getStringResponse(eq(partnerAcquirer.getUrl()), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
+        doReturn(partnerAcquirer).when(client).fetchPartnerAcquirer(any(), any());
 
 
         // call method

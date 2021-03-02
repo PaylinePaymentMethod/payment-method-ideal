@@ -5,10 +5,11 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.payline.payment.ideal.bean.Acquirer;
 import com.payline.payment.ideal.bean.Directory;
+import com.payline.payment.ideal.utils.constant.IdealConstant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@JacksonXmlRootElement(localName = "DirectoryRes", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+@JacksonXmlRootElement(localName = "DirectoryRes",  namespace = IdealConstant.IDEAL_NAMESPACE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 @Getter

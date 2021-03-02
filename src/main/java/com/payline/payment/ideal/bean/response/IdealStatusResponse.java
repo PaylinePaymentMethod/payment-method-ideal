@@ -5,11 +5,12 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.payline.payment.ideal.bean.Acquirer;
 import com.payline.payment.ideal.bean.IdealError;
 import com.payline.payment.ideal.bean.Transaction;
+import com.payline.payment.ideal.utils.constant.IdealConstant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@JacksonXmlRootElement(localName = "AcquirerStatusRes", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+@JacksonXmlRootElement(localName = "AcquirerStatusRes",  namespace = IdealConstant.IDEAL_NAMESPACE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

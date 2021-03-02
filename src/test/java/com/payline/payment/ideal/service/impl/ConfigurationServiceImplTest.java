@@ -15,6 +15,7 @@ import com.payline.pmapi.bean.configuration.PartnerConfiguration;
 import com.payline.pmapi.bean.configuration.ReleaseInformation;
 import com.payline.pmapi.bean.configuration.parameter.AbstractParameter;
 import com.payline.pmapi.bean.configuration.request.ContractParametersCheckRequest;
+import com.payline.pmapi.bean.configuration.request.ContractParametersRequest;
 import com.payline.pmapi.bean.configuration.request.RetrievePluginConfigurationRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,8 +55,16 @@ class ConfigurationServiceImplTest {
 
     @Test
     void getParameters() {
-        List<AbstractParameter> parameters = service.getParameters(Locale.FRANCE);
-        Assertions.assertEquals(2, parameters.size());
+        final Map<String, String> configurationMap = new HashMap<>();
+        configurationMap.put(PartnerConfigurationKeys.ACQUIRERS, "[{\"NAME\":\"BNPP\",\"URL\":\"http://www.urlbnp.com\",\"PUBLIC_KEY\":\"publicKey\",\"IDEAL_PUBLIC\":\"idealPublic\",\"PUBLIC_KEY_ID\":\"publicKeyId\",\"MERCHANT_ID\":\"017001580\",\"SUBMERCHANT_ID\":\"0\"},{\"NAME\":\"ABNAMRO\",\"URL\":\"http://www.abnamro.com\",\"PUBLIC_KEY\":\"publicKey\",\"IDEAL_PUBLIC\":\"abnaMROKey\",\"PUBLIC_KEY_ID\":\"publicKeyId\",\"MERCHANT_ID\":\"01234567\",\"SUBMERCHANT_ID\":\"1\"}]");
+        configurationMap.put(PartnerConfigurationKeys.ACQUIRERS_SENSITIVE_DATA, "[{\"NAME\":\"BNPP\",\"PRIVATE_KEY\":\"privateKeyBNPP\"},{\"NAME\":\"ABNAMRO\",\"PRIVATE_KEY\":\"privateKeyAbnamro\"}]");
+
+        final PartnerConfiguration partnerConfiguration = new PartnerConfiguration(configurationMap, new HashMap<>());
+        final ContractParametersRequest contractParametersRequest = ContractParametersRequest.builder()
+                .locale(Locale.FRANCE)
+                .partnerConfiguration(partnerConfiguration).build();
+        List<AbstractParameter> parameters = service.getParameters(contractParametersRequest);
+        Assertions.assertEquals(3, parameters.size());
 
         AbstractParameter param1 = parameters.stream()
                 .filter(parameter -> "merchantId".equals(parameter.getKey()))
