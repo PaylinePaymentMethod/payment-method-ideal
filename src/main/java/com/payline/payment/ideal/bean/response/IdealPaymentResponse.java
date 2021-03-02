@@ -6,10 +6,11 @@ import com.payline.payment.ideal.bean.Acquirer;
 import com.payline.payment.ideal.bean.IdealError;
 import com.payline.payment.ideal.bean.Issuer;
 import com.payline.payment.ideal.bean.Transaction;
+import com.payline.payment.ideal.utils.constant.IdealConstant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@JacksonXmlRootElement(localName = "AcquirerTrxRes", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+@JacksonXmlRootElement(localName = "AcquirerTrxRes",  namespace = IdealConstant.IDEAL_NAMESPACE)
 @NoArgsConstructor
 @Getter
 public class IdealPaymentResponse extends IdealResponse {

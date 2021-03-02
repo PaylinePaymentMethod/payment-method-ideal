@@ -123,7 +123,6 @@ public class PaymentWithRedirectionServiceImpl implements PaymentWithRedirection
                         .withErrorCode(status.name())
                         .withFailureCause(cause)
                         .build();
-
             }
         }
 

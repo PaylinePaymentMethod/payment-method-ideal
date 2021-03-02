@@ -8,16 +8,21 @@ import com.payline.payment.ideal.bean.request.IdealStatusRequest;
 import com.payline.payment.ideal.bean.response.IdealDirectoryResponse;
 import com.payline.payment.ideal.bean.response.IdealPaymentResponse;
 import com.payline.payment.ideal.bean.response.IdealStatusResponse;
+import com.payline.payment.ideal.exception.InvalidDataException;
 import com.payline.payment.ideal.exception.PluginException;
 import com.payline.payment.ideal.service.IdealPaymentRequestService;
 import com.payline.payment.ideal.service.IdealStatusRequestService;
+import com.payline.payment.ideal.service.impl.PartnerConfigurationService;
 import com.payline.payment.ideal.utils.XMLUtils;
+import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
 import com.payline.payment.ideal.utils.constant.PartnerConfigurationKeys;
 import com.payline.payment.ideal.utils.security.SignatureUtils;
 import com.payline.pmapi.bean.common.FailureCause;
 import com.payline.pmapi.bean.configuration.PartnerConfiguration;
 import com.payline.pmapi.bean.configuration.request.ContractParametersCheckRequest;
 import com.payline.pmapi.bean.configuration.request.RetrievePluginConfigurationRequest;
+import com.payline.pmapi.bean.payment.ContractConfiguration;
+import com.payline.pmapi.bean.payment.ContractProperty;
 import com.payline.pmapi.bean.payment.request.PaymentRequest;
 import com.payline.pmapi.bean.payment.request.RedirectionPaymentRequest;
 import com.payline.pmapi.bean.payment.request.TransactionStatusRequest;
@@ -29,6 +34,7 @@ import org.apache.http.message.BasicHeader;
 import java.nio.charset.Charset;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+
 @Log4j2
 public class IdealHttpClient extends AbstractHttpClient {
 
@@ -40,13 +46,14 @@ public class IdealHttpClient extends AbstractHttpClient {
     private SignatureUtils signatureUtils;
     private IdealPaymentRequestService idealPaymentRequestService;
     private IdealStatusRequestService idealStatusRequestService;
+    private PartnerConfigurationService partnerConfigurationService;
 
     private IdealHttpClient() {
         xmlUtils = XMLUtils.getInstance();
         signatureUtils = SignatureUtils.getInstance();
         idealPaymentRequestService =  IdealPaymentRequestService.getInstance();
         idealStatusRequestService =  IdealStatusRequestService.getInstance();
-
+        partnerConfigurationService = PartnerConfigurationService.getInstance();
     }
 
 
@@ -112,8 +119,13 @@ public class IdealHttpClient extends AbstractHttpClient {
      * @return the response of the directoryRequestHttp call
      */
     public IdealDirectoryResponse directoryRequest(ContractParametersCheckRequest request) {
-        IdealDirectoryRequest directoryRequest = new IdealDirectoryRequest(request);
-        return this.directoryRequest(directoryRequest, request.getPartnerConfiguration());
+        final IdealDirectoryRequest directoryRequest = new IdealDirectoryRequest(request);
+        final String acquirerId = request.getAccountInfo().get(ContractConfigurationKeys.ACQUIRER_ID);
+        if (acquirerId == null) {
+            throw new InvalidDataException("Aucun aquereur selectionne");
+        }
+        final PartnerAcquirer partnerAcquirer = partnerConfigurationService.getPartnerAcquirer(request.getPartnerConfiguration(), acquirerId);
+        return this.directoryRequest(directoryRequest, partnerAcquirer);
     }
 
     /**
@@ -156,34 +168,6 @@ public class IdealHttpClient extends AbstractHttpClient {
         return xmlUtils.fromXML(response.getContent(), IdealDirectoryResponse.class);
     }
 
-    /**
-     * Prepare then call the Directory Request API
-     *
-     * @param directoryRequest
-     * @param configuration
-     * @return
-     */
-    private IdealDirectoryResponse directoryRequest(IdealDirectoryRequest directoryRequest, PartnerConfiguration configuration) {
-        // get url
-        String url = configuration.getProperty(PartnerConfigurationKeys.URL_ABNAMRO);
-
-        // create headers
-        Header[] headers = createHeaders();
-
-        // create body
-        String signedXmlBody = this.createBody(directoryRequest, configuration);
-
-        // do the call
-        StringResponse response = super.doPost(url, "", headers, new StringEntity(signedXmlBody, Charset.defaultCharset()));
-
-        // check the response status
-        checkResponse(response);
-
-        // check the response signature
-        PublicKey idealPublicKey = signatureUtils.getPublicKeyFromString(configuration.getProperty(PartnerConfigurationKeys.IDEAL_PUBLIC));
-        signatureUtils.verifySignatureXML(response.getContent(), idealPublicKey);
-        return xmlUtils.fromXML(response.getContent(), IdealDirectoryResponse.class);
-    }
 
     /**
      * Prepare then call the Transaction Request API
@@ -193,8 +177,10 @@ public class IdealHttpClient extends AbstractHttpClient {
      */
     public IdealPaymentResponse transactionRequest(PaymentRequest request) {
 
+        final PartnerAcquirer partnerAcquirer = fetchPartnerAcquirer(request.getContractConfiguration(), request.getPartnerConfiguration());
+
         // get url
-        String url = request.getPartnerConfiguration().getProperty(PartnerConfigurationKeys.URL_ABNAMRO);
+        String url = partnerAcquirer.getUrl();
 
         // create headers
         Header[] headers = createHeaders();
@@ -202,7 +188,7 @@ public class IdealHttpClient extends AbstractHttpClient {
         // create body
 
         IdealPaymentRequest paymentRequest = idealPaymentRequestService.buildIdealPaymentRequest(request);
-        String signedXmlBody = this.createBody(paymentRequest, request.getPartnerConfiguration());
+        String signedXmlBody = this.createBody(paymentRequest, partnerAcquirer);
 
         // do the call
         StringResponse response = super.doPost(url, "", headers, new StringEntity(signedXmlBody, Charset.defaultCharset()));
@@ -211,7 +197,7 @@ public class IdealHttpClient extends AbstractHttpClient {
         checkResponse(response);
 
         // check the response signature
-        PublicKey idealPublicKey = signatureUtils.getPublicKeyFromString(request.getPartnerConfiguration().getProperty(PartnerConfigurationKeys.IDEAL_PUBLIC));
+        PublicKey idealPublicKey = signatureUtils.getPublicKeyFromString(partnerAcquirer.getIdealPublicKey());
         signatureUtils.verifySignatureXML(response.getContent(), idealPublicKey);
 
         // return an Ideal response object
@@ -226,8 +212,17 @@ public class IdealHttpClient extends AbstractHttpClient {
      */
     public IdealStatusResponse statusRequest(RedirectionPaymentRequest request) {
 
+        final PartnerAcquirer partnerAcquirer = fetchPartnerAcquirer(request.getContractConfiguration(), request.getPartnerConfiguration());
         IdealStatusRequest statusRequest = idealStatusRequestService.buildIdealStatusRequest(request);
-        return this.statusRequest(statusRequest, request.getPartnerConfiguration());
+        return this.statusRequest(statusRequest, partnerAcquirer);
+    }
+
+    protected PartnerAcquirer fetchPartnerAcquirer(final ContractConfiguration contractConfiguration, final PartnerConfiguration partnerConfiguration) {
+        final ContractProperty acquirerProperty = contractConfiguration
+                .getProperty(ContractConfigurationKeys.ACQUIRER_ID);
+        final String acquirer = acquirerProperty.getValue();
+
+        return partnerConfigurationService.getPartnerAcquirer(partnerConfiguration, acquirer);
     }
 
     /**
@@ -237,26 +232,31 @@ public class IdealHttpClient extends AbstractHttpClient {
      * @return
      */
     public IdealStatusResponse statusRequest(TransactionStatusRequest request) {
-        IdealStatusRequest statusRequest = idealStatusRequestService.buildIdealStatusRequest(request);
-        return this.statusRequest(statusRequest, request.getPartnerConfiguration());
+        final PartnerAcquirer partnerAcquirer = fetchPartnerAcquirer(request.getContractConfiguration(), request.getPartnerConfiguration());
+
+        final IdealStatusRequest statusRequest = idealStatusRequestService.buildIdealStatusRequest(request);
+        return this.statusRequest(statusRequest, partnerAcquirer);
     }
 
     /**
      * Prepare then call the Status Request API
      *
      * @param statusRequest
-     * @param configuration
+     *      La requete du statut de la transaction.
+     * @param partnerAcquirer
+     *      La configuration du partenaire ideal.
      * @return
+     *      La reponse du partenaire concernant le statut d'une transaction.
      */
-    private IdealStatusResponse statusRequest(IdealStatusRequest statusRequest, PartnerConfiguration configuration) {
+    private IdealStatusResponse statusRequest(IdealStatusRequest statusRequest, PartnerAcquirer partnerAcquirer) {
         // get url
-        String url = configuration.getProperty(PartnerConfigurationKeys.URL_ABNAMRO);
+        final String url = partnerAcquirer.getUrl();
 
         // create headers
         Header[] headers = createHeaders();
 
         // create body
-        String signedXmlBody = this.createBody(statusRequest, configuration);
+        String signedXmlBody = this.createBody(statusRequest, partnerAcquirer);
 
         // do the call
         StringResponse response = super.doPost(url, "", headers, new StringEntity(signedXmlBody, Charset.defaultCharset()));
@@ -265,7 +265,7 @@ public class IdealHttpClient extends AbstractHttpClient {
         checkResponse(response);
 
         // check the response signature
-        PublicKey idealPublicKey = signatureUtils.getPublicKeyFromString(configuration.getProperty(PartnerConfigurationKeys.IDEAL_PUBLIC));
+        PublicKey idealPublicKey = signatureUtils.getPublicKeyFromString(partnerAcquirer.getIdealPublicKey());
         signatureUtils.verifySignatureXML(response.getContent(), idealPublicKey);
 
         // return an Ideal response object
@@ -295,7 +295,6 @@ public class IdealHttpClient extends AbstractHttpClient {
             if (errorCode >= 400 && errorCode < 500) {
                 failureCause = FailureCause.INVALID_DATA;
             }
-
             throw new PluginException(message, failureCause);
         }
     }

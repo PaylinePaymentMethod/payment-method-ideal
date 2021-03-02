@@ -1,7 +1,6 @@
 package com.payline.payment.ideal.service.impl;
 
 import com.payline.payment.ideal.bean.PartnerAcquirer;
-import com.payline.payment.ideal.service.PartnerConfigurationService;
 import com.payline.pmapi.bean.configuration.PartnerConfiguration;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class PartnerConfigurationServiceImplTest {
 
-    final PartnerConfigurationService underTest = new PartnerConfigurationServiceImpl();
+    final PartnerConfigurationService underTest = PartnerConfigurationService.getInstance();
 
     @Test
      void testFetchAcquirerList() {

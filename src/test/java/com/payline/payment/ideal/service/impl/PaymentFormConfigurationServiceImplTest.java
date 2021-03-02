@@ -2,6 +2,11 @@ package com.payline.payment.ideal.service.impl;
 
 import com.payline.payment.ideal.Utils;
 import com.payline.payment.ideal.exception.PluginException;
+import com.payline.payment.ideal.utils.JSONUtils;
+import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
+import com.payline.pmapi.bean.configuration.PartnerConfiguration;
+import com.payline.pmapi.bean.payment.ContractConfiguration;
+import com.payline.pmapi.bean.payment.ContractProperty;
 import com.payline.pmapi.bean.paymentform.bean.field.SelectOption;
 import com.payline.pmapi.bean.paymentform.bean.form.BankTransferForm;
 import com.payline.pmapi.bean.paymentform.request.PaymentFormConfigurationRequest;
@@ -15,7 +20,12 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 class PaymentFormConfigurationServiceImplTest {
@@ -45,6 +55,8 @@ class PaymentFormConfigurationServiceImplTest {
             "      </Country>" +
             "   </Directory>";
 
+    private JSONUtils jsonUtils = JSONUtils.getInstance();
+
     @Spy
     PaymentFormConfigurationServiceImpl service = new PaymentFormConfigurationServiceImpl();
 
@@ -55,44 +67,57 @@ class PaymentFormConfigurationServiceImplTest {
 
     @Test
     void getPaymentFormConfiguration() {
+
+        final Map<String, String> issuerConfiguration = new HashMap<>();
+        issuerConfiguration.put("BNPP", countries);
+
+        final Map<String, String> partner = new HashMap<>();
+        partner.put("acquirers", "[{\"NAME\":\"BNPP\",\"URL\":\"https://www.google.fr/\",\"PUBLIC_KEY\":\"publicKey\",\"IDEAL_PUBLIC\":\"idealPublicKey\",\"PUBLIC_KEY_ID\":\"publicKeyId\",\"MERCHANT_ID\":\"0123456\",\"SUBMERCHANT_ID\":\"0\"}]");
+
+        final HashMap<String, ContractProperty> contractPropertyList = new HashMap<>();
+        contractPropertyList.put(ContractConfigurationKeys.ACQUIRER_ID, new ContractProperty("BNPP"));
+        final ContractConfiguration contractConfiguration = new ContractConfiguration("IDEAL_V2", contractPropertyList);
+        final PartnerConfiguration partnerConfiguration = new PartnerConfiguration(partner, new HashMap<>());
         // create data
-        PaymentFormConfigurationRequest request = Utils.createDefaultPaymentFormConfigurationRequestBuilder()
-                .withPluginConfiguration(countries)
+        final PaymentFormConfigurationRequest request = Utils.createDefaultPaymentFormConfigurationRequestBuilder()
+                .withPluginConfiguration(jsonUtils.toJson(issuerConfiguration))
+                .withPartnerConfiguration(partnerConfiguration)
+                .withContractConfiguration(contractConfiguration)
                 .build();
 
         // call method
-        PaymentFormConfigurationResponse formConfiguration = service.getPaymentFormConfiguration(request);
+        final PaymentFormConfigurationResponse formConfiguration = service.getPaymentFormConfiguration(request);
 
         // assertion
-        Assertions.assertEquals(PaymentFormConfigurationResponseSpecific.class, formConfiguration.getClass());
+        assertEquals(PaymentFormConfigurationResponseSpecific.class, formConfiguration.getClass());
         PaymentFormConfigurationResponseSpecific responseSpecific = (PaymentFormConfigurationResponseSpecific) formConfiguration;
 
-        Assertions.assertEquals(BankTransferForm.class, responseSpecific.getPaymentForm().getClass());
-        BankTransferForm bankTransferForm = (BankTransferForm) responseSpecific.getPaymentForm();
+        assertEquals(BankTransferForm.class, responseSpecific.getPaymentForm().getClass());
+        final BankTransferForm bankTransferForm = (BankTransferForm) responseSpecific.getPaymentForm();
 
-        SelectOption bank1 = bankTransferForm.getBanks().stream()
+        final SelectOption bank1 = bankTransferForm.getBanks().stream()
                 .filter(bank -> "ABNANL2AXXX".equals(bank.getKey()))
                 .findAny()
                 .orElse(null);
-        Assertions.assertEquals("ABN AMRO Bank", bank1.getValue());
+        assertEquals("ABN AMRO Bank", bank1.getValue());
 
-        SelectOption bank2 = bankTransferForm.getBanks().stream()
+        final SelectOption bank2 = bankTransferForm.getBanks().stream()
                 .filter(bank -> "FRBKNL2LXXX".equals(bank.getKey()))
                 .findAny()
                 .orElse(null);
-        Assertions.assertEquals("Friesland Bank", bank2.getValue());
+        assertEquals("Friesland Bank", bank2.getValue());
 
-        SelectOption bank3 = bankTransferForm.getBanks().stream()
+        final SelectOption bank3 = bankTransferForm.getBanks().stream()
                 .filter(bank -> "INGBNL2AXXX".equals(bank.getKey()))
                 .findAny()
                 .orElse(null);
-        Assertions.assertEquals("ING", bank3.getValue());
+        assertEquals("ING", bank3.getValue());
 
-        SelectOption bank4 = bankTransferForm.getBanks().stream()
+        final SelectOption bank4 = bankTransferForm.getBanks().stream()
                 .filter(bank -> "KREDBE22XXX".equals(bank.getKey()))
                 .findAny()
                 .orElse(null);
-        Assertions.assertEquals("KBC", bank4.getValue());
+        assertEquals("KBC", bank4.getValue());
     }
 
     @Test
@@ -106,7 +131,7 @@ class PaymentFormConfigurationServiceImplTest {
         PaymentFormConfigurationResponse formConfiguration = service.getPaymentFormConfiguration(request);
 
         // assertion
-        Assertions.assertEquals(PaymentFormConfigurationResponseFailure.class, formConfiguration.getClass());
+        assertEquals(PaymentFormConfigurationResponseFailure.class, formConfiguration.getClass());
     }
 
 
@@ -117,17 +142,17 @@ class PaymentFormConfigurationServiceImplTest {
 
         // assertion
         Assertions.assertNotNull(options);
-        Assertions.assertEquals(4, options.size());
+        assertEquals(4, options.size());
     }
 
     @Test
     void getOptionFromPluginConfigurationnull() {
-        Assertions.assertThrows(PluginException.class, () -> service.getOptionFromPluginConfiguration(null));
+        assertThrows(PluginException.class, () -> service.getOptionFromPluginConfiguration(null));
     }
 
     @Test
     void getOptionFromPluginConfigurationKO() {
-        Assertions.assertThrows(PluginException.class, () -> service.getOptionFromPluginConfiguration("foo"));
+        assertThrows(PluginException.class, () -> service.getOptionFromPluginConfiguration("foo"));
     }
 
 

@@ -3,7 +3,6 @@ package com.payline.payment.ideal.service.impl;
 import com.payline.payment.ideal.bean.PartnerAcquirer;
 import com.payline.payment.ideal.bean.response.IdealDirectoryResponse;
 import com.payline.payment.ideal.exception.PluginException;
-import com.payline.payment.ideal.service.PartnerConfigurationService;
 import com.payline.payment.ideal.utils.JSONUtils;
 import com.payline.payment.ideal.utils.PluginUtils;
 import com.payline.payment.ideal.utils.XMLUtils;
@@ -14,7 +13,9 @@ import com.payline.payment.ideal.utils.properties.ReleaseProperties;
 import com.payline.pmapi.bean.configuration.ReleaseInformation;
 import com.payline.pmapi.bean.configuration.parameter.AbstractParameter;
 import com.payline.pmapi.bean.configuration.parameter.impl.InputParameter;
+import com.payline.pmapi.bean.configuration.parameter.impl.ListBoxParameter;
 import com.payline.pmapi.bean.configuration.request.ContractParametersCheckRequest;
+import com.payline.pmapi.bean.configuration.request.ContractParametersRequest;
 import com.payline.pmapi.bean.configuration.request.RetrievePluginConfigurationRequest;
 import com.payline.pmapi.bean.payment.ContractConfiguration;
 import com.payline.pmapi.bean.payment.ContractProperty;
@@ -32,29 +33,56 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private I18nService i18n = I18nService.getInstance();
     private IdealHttpClient client = IdealHttpClient.getInstance();
     private XMLUtils xmlUtils =  XMLUtils.getInstance();
-    private PartnerConfigurationService partnerConfigurationService = new PartnerConfigurationServiceImpl();
+    private PartnerConfigurationService partnerConfigurationService = PartnerConfigurationService.getInstance();
     private JSONUtils jsonUtils = JSONUtils.getInstance();
+    private static final String I18N_CONTRACT_PREFIX = "contract.";
+
     @Override
-    public List<AbstractParameter> getParameters(Locale locale) {
+    public List<AbstractParameter> getParameters(ContractParametersRequest request) {
         List<AbstractParameter> parameters = new ArrayList<>();
 
         final InputParameter merchantId = new InputParameter();
         merchantId.setKey(ContractConfigurationKeys.MERCHANT_ID_KEY);
-        merchantId.setLabel(this.i18n.getMessage(ContractConfigurationKeys.MERCHANT_ID_LABEL, locale));
-        merchantId.setDescription(this.i18n.getMessage(ContractConfigurationKeys.MERCHANT_ID_DESCRIPTION, locale));
+        merchantId.setLabel(this.i18n.getMessage(ContractConfigurationKeys.MERCHANT_ID_LABEL, request.getLocale()));
+        merchantId.setDescription(this.i18n.getMessage(ContractConfigurationKeys.MERCHANT_ID_DESCRIPTION, request.getLocale()));
         merchantId.setRequired(true);
 
         parameters.add(merchantId);
 
         final InputParameter merchantSubId = new InputParameter();
         merchantSubId.setKey(ContractConfigurationKeys.MERCHANT_SUBID_KEY);
-        merchantSubId.setLabel(this.i18n.getMessage(ContractConfigurationKeys.MERCHANT_SUBID_LABEL, locale));
-        merchantSubId.setDescription(this.i18n.getMessage(ContractConfigurationKeys.MERCHANT_SUBID_DESCRIPTION, locale));
+        merchantSubId.setLabel(this.i18n.getMessage(ContractConfigurationKeys.MERCHANT_SUBID_LABEL, request.getLocale()));
+        merchantSubId.setDescription(this.i18n.getMessage(ContractConfigurationKeys.MERCHANT_SUBID_DESCRIPTION, request.getLocale()));
         merchantSubId.setRequired(false);
 
         parameters.add(merchantSubId);
 
+
+        final ListBoxParameter listBoxParameter = new ListBoxParameter();
+        final String key = ContractConfigurationKeys.ACQUIRER_ID;
+        final Map<String, PartnerAcquirer> fetchAcquirerList =
+                partnerConfigurationService.fetchAcquirerList(request.getPartnerConfiguration());
+
+        final HashMap<String, String> acquirerKeyList = new HashMap<>();
+        if (fetchAcquirerList != null) {
+            fetchAcquirerList.forEach((k,v) -> acquirerKeyList.put(k, k));
+        }
+
+        listBoxParameter.setKey(key);
+        listBoxParameter.setLabel(i18n.getMessage(I18N_CONTRACT_PREFIX + key + ".label", request.getLocale()));
+        listBoxParameter.setDescription(i18n.getMessage(I18N_CONTRACT_PREFIX + key + ".description", request.getLocale()));
+        listBoxParameter.setList(acquirerKeyList);
+        listBoxParameter.setRequired(true);
+
+        parameters.add(listBoxParameter);
+
         return parameters;
+
+    }
+
+    @Override
+    public List<AbstractParameter> getParameters(Locale locale) {
+      throw new IllegalStateException("Method not allowed");
     }
 
     @Override
@@ -77,18 +105,16 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public String retrievePluginConfiguration(RetrievePluginConfigurationRequest retrievePluginConfigurationRequest) {
         try {
-
             Map <String, String> directoryConfigurationMap = new HashMap<>();
             if (!PluginUtils.isEmpty(retrievePluginConfigurationRequest.getPluginConfiguration())) {
                 directoryConfigurationMap = jsonUtils.fromJSON(retrievePluginConfigurationRequest.getPluginConfiguration());
             }
-
-            //On récupère la liste des acquéreurs.
+            //On recupere la liste des acquereurs.
             final Map<String, PartnerAcquirer> partnerAcquirers = partnerConfigurationService.fetchAcquirerList(retrievePluginConfigurationRequest.getPartnerConfiguration());
 
-            //on interroge chaque acquéreur pour récupérer sa configuration
+            //on interroge chaque acquereur pour recuperer sa configuration
             for (PartnerAcquirer partnerAcquirer : partnerAcquirers.values()) {
-                getDirectoryIssuer(directoryConfigurationMap, partnerAcquirer, retrievePluginConfigurationRequest);
+                directoryConfigurationMap.putAll(getDirectoryIssuer(partnerAcquirer, retrievePluginConfigurationRequest));
             }
             return jsonUtils.toJson(directoryConfigurationMap);
 
@@ -112,16 +138,15 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     /**
-     * Permet d'appeler le partenaire pour récupérer la liste des issuers possibles pour celui-ci.
-     * @param directoryConfigurationMap
-     *          La Map a mettre à jour si l'appel à réussi.
+     * Permet d'appeler le partenaire pour recuperer la liste des issuers possibles pour celui-ci.
      * @param partnerAcquirer
      *          La configuration du partenaire qu'il faut appeler.
      * @param request
-     *          Les paramètres de la requête faite par le core.
+     *          Les parametres de la requete faite par le core.
      */
-    protected void getDirectoryIssuer(final Map<String, String> directoryConfigurationMap, final PartnerAcquirer partnerAcquirer,
+    protected Map<String, String> getDirectoryIssuer(final PartnerAcquirer partnerAcquirer,
                                       final RetrievePluginConfigurationRequest request) {
+        final Map<String, String> directoryConfigurationMap = new HashMap<>();
         try {
             final ContractConfiguration contractConfiguration = buildContractConfiguration(partnerAcquirer);
             final RetrievePluginConfigurationRequest newRequest = RetrievePluginConfigurationRequest.
@@ -141,8 +166,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             //PluginException rassemble les HTTP Communication error
             //on ne change pas les anciennes configurations si elles existent.
         } catch (PluginException e) {
-            log.error("Exception au niveau de l'exécution du plugin", e);
+            log.error("Exception au niveau de l'execution du plugin", e);
         }
+        return directoryConfigurationMap;
     }
 
     protected ContractConfiguration buildContractConfiguration(final PartnerAcquirer partnerAcquirer) {
