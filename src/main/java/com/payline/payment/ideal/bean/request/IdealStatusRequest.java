@@ -5,14 +5,15 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.payline.payment.ideal.bean.IdealBean;
 import com.payline.payment.ideal.bean.Merchant;
 import com.payline.payment.ideal.bean.Transaction;
+import com.payline.payment.ideal.utils.constant.IdealConstant;
 
-@JacksonXmlRootElement(localName = "AcquirerStatusReq", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+@JacksonXmlRootElement(localName = "AcquirerStatusReq", namespace = IdealConstant.IDEAL_NAMESPACE)
 public class IdealStatusRequest extends IdealBean {
 
-    @JacksonXmlProperty(localName = "Merchant", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+    @JacksonXmlProperty(localName = "Merchant", namespace = IdealConstant.IDEAL_NAMESPACE)
     private Merchant merchant;
 
-    @JacksonXmlProperty(localName = "Transaction", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+    @JacksonXmlProperty(localName = "Transaction", namespace = IdealConstant.IDEAL_NAMESPACE)
     private Transaction transaction;
 
     public IdealStatusRequest(Merchant merchant,Transaction transaction) {

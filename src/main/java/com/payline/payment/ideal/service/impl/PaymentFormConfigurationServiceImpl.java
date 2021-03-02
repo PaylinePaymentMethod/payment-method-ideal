@@ -6,12 +6,15 @@ import com.payline.payment.ideal.bean.Issuer;
 import com.payline.payment.ideal.exception.InvalidDataException;
 import com.payline.payment.ideal.exception.PluginException;
 import com.payline.payment.ideal.service.LogoPaymentFormConfigurationService;
+import com.payline.payment.ideal.utils.JSONUtils;
 import com.payline.payment.ideal.utils.PluginUtils;
 import com.payline.payment.ideal.utils.XMLUtils;
+import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
 import com.payline.payment.ideal.utils.constant.FormConfigurationKeys;
 import com.payline.pmapi.bean.common.FailureCause;
 import com.payline.pmapi.bean.paymentform.bean.field.PaymentFormField;
 import com.payline.pmapi.bean.paymentform.bean.field.PaymentFormInputFieldSelect;
+import com.payline.pmapi.bean.payment.ContractProperty;
 import com.payline.pmapi.bean.paymentform.bean.field.SelectOption;
 import com.payline.pmapi.bean.paymentform.bean.form.BankTransferForm;
 import com.payline.pmapi.bean.paymentform.bean.form.CustomForm;
@@ -23,10 +26,12 @@ import lombok.extern.log4j.Log4j2;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 public class PaymentFormConfigurationServiceImpl extends LogoPaymentFormConfigurationService {
     private XMLUtils xmlUtils = XMLUtils.getInstance();
+    private JSONUtils jsonUtils = JSONUtils.getInstance();
 
     @Override
     public PaymentFormConfigurationResponse getPaymentFormConfiguration(PaymentFormConfigurationRequest request) {
@@ -47,7 +52,19 @@ public class PaymentFormConfigurationServiceImpl extends LogoPaymentFormConfigur
             final List<PaymentFormField> paymentFormFields = new ArrayList<>();
             paymentFormFields.add(selectField);
 
-            final CustomForm customForm = CustomForm.builder()
+            final ContractProperty acquirerProperty = request.getContractConfiguration().getProperty(ContractConfigurationKeys.ACQUIRER_ID);
+            if (acquirerProperty == null || PluginUtils.isEmpty(acquirerProperty.getValue())) {
+                throw new InvalidDataException("Aucun acquereur n'est configure pour ce contrat");
+            }
+
+            if (PluginUtils.isEmpty(request.getPluginConfiguration())) {
+                throw new InvalidDataException("Aucun acquereur n'est disponible pour ce contrat");
+            }
+            final Map<String, String> acquirerList = jsonUtils.fromJSON(request.getPluginConfiguration());
+            final String directory = acquirerList.get(acquirerProperty.getValue());
+
+            CustomForm customForm = BankTransferForm.builder()
+                    .withBanks(getOptionFromPluginConfiguration(directory))
                     .withDisplayButton(true)
                     .withDescription("")
                     .withButtonText(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_TEXT, request.getLocale()))

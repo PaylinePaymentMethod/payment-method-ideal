@@ -8,10 +8,6 @@ import lombok.Setter;
 @Setter
 public class PartnerAcquirer {
 
-    public PartnerAcquirer() {
-
-    }
-
     /** Acquirer Name **/
     @JsonProperty("NAME")
     String name;

@@ -305,6 +305,7 @@ public class Utils {
         Map<String, ContractProperty> map = new HashMap<>();
         map.put(ContractConfigurationKeys.MERCHANT_ID_KEY, new ContractProperty(MERCHANT_ID));
         map.put(ContractConfigurationKeys.MERCHANT_SUBID_KEY, new ContractProperty(null));
+        map.put(ContractConfigurationKeys.ACQUIRER_ID, new ContractProperty("BNPP"));
 
         return new ContractConfiguration("iDEAL", map);
     }
@@ -351,7 +352,7 @@ public class Utils {
 
     public static PartnerConfiguration createDefaultPartnerConfiguration() {
         Map<String, String> map = new HashMap<>();
-        map.put(PartnerConfigurationKeys.URL_ABNAMRO, URL);
+        map.put(PartnerConfigurationKeys.URL_PARTNER, URL);
         map.put(PartnerConfigurationKeys.PUBLIC_KEY_ID, "686643AF86B9BC2F442992919092A7B3835990D4");
         Map<String, String> sensitiveMap = new HashMap<>();
         sensitiveMap.put(PartnerConfigurationKeys.PRIVATE_KEY, PRIVATE_KEY);

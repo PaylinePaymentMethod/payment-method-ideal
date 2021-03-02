@@ -30,7 +30,7 @@ public class PaymentServiceImpl implements PaymentService {
         String partnerTransactionId = IdealConstant.UNKNOWN;
 
         try {
-            IdealPaymentResponse response = client.transactionRequest(paymentRequest);
+            final IdealPaymentResponse response = client.transactionRequest(paymentRequest);
 
             if (response.getError() != null) {
                 String errorCode = response.getError().getErrorCode();
@@ -96,6 +96,4 @@ public class PaymentServiceImpl implements PaymentService {
                     .build();
         }
     }
-
-
 }

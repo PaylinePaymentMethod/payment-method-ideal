@@ -6,13 +6,14 @@ import com.payline.payment.ideal.bean.IdealBean;
 import com.payline.payment.ideal.bean.Merchant;
 import com.payline.payment.ideal.utils.PluginUtils;
 import com.payline.payment.ideal.utils.constant.ContractConfigurationKeys;
+import com.payline.payment.ideal.utils.constant.IdealConstant;
 import com.payline.pmapi.bean.configuration.request.ContractParametersCheckRequest;
 import com.payline.pmapi.bean.payment.ContractConfiguration;
 
-@JacksonXmlRootElement(localName = "DirectoryReq", namespace = "http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+@JacksonXmlRootElement(localName = "DirectoryReq", namespace = IdealConstant.IDEAL_NAMESPACE)
 public class IdealDirectoryRequest extends IdealBean {
 
-    @JacksonXmlProperty(localName = "Merchant", namespace="http://www.idealdesk.com/ideal/messages/mer-acq/3.3.1")
+    @JacksonXmlProperty(localName = "Merchant", namespace=IdealConstant.IDEAL_NAMESPACE)
     private Merchant merchant;
 
     public IdealDirectoryRequest() {
