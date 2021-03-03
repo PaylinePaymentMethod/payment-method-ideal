@@ -37,9 +37,20 @@ public class PaymentFormConfigurationServiceImpl extends LogoPaymentFormConfigur
     public PaymentFormConfigurationResponse getPaymentFormConfiguration(PaymentFormConfigurationRequest request) {
         try {
 
+            final ContractProperty acquirerProperty = request.getContractConfiguration().getProperty(ContractConfigurationKeys.ACQUIRER_ID);
+            if (acquirerProperty == null || PluginUtils.isEmpty(acquirerProperty.getValue())) {
+                throw new InvalidDataException("Aucun acquereur n'est configure pour ce contrat");
+            }
+
+            if (PluginUtils.isEmpty(request.getPluginConfiguration())) {
+                throw new InvalidDataException("Aucun acquereur n'est disponible pour ce contrat");
+            }
+            final Map<String, String> acquirerList = jsonUtils.fromJSON(request.getPluginConfiguration());
+            final String directory = acquirerList.get(acquirerProperty.getValue());
+
             // Champ de selection de banque
             final PaymentFormInputFieldSelect selectField = PaymentFormInputFieldSelect.PaymentFormFieldSelectBuilder.aPaymentFormInputFieldSelect()
-                    .withSelectOptions(getOptionFromPluginConfiguration(request.getPluginConfiguration()))
+                    .withSelectOptions(getOptionFromPluginConfiguration(directory))
                     .withIsFilterable(true)
                     .withKey(BankTransferForm.BANK_KEY)
                     .withLabel(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_LABEL, request.getLocale()))
@@ -52,19 +63,7 @@ public class PaymentFormConfigurationServiceImpl extends LogoPaymentFormConfigur
             final List<PaymentFormField> paymentFormFields = new ArrayList<>();
             paymentFormFields.add(selectField);
 
-            final ContractProperty acquirerProperty = request.getContractConfiguration().getProperty(ContractConfigurationKeys.ACQUIRER_ID);
-            if (acquirerProperty == null || PluginUtils.isEmpty(acquirerProperty.getValue())) {
-                throw new InvalidDataException("Aucun acquereur n'est configure pour ce contrat");
-            }
-
-            if (PluginUtils.isEmpty(request.getPluginConfiguration())) {
-                throw new InvalidDataException("Aucun acquereur n'est disponible pour ce contrat");
-            }
-            final Map<String, String> acquirerList = jsonUtils.fromJSON(request.getPluginConfiguration());
-            final String directory = acquirerList.get(acquirerProperty.getValue());
-
-            CustomForm customForm = BankTransferForm.builder()
-                    .withBanks(getOptionFromPluginConfiguration(directory))
+            CustomForm customForm = CustomForm.builder()
                     .withDisplayButton(true)
                     .withDescription("")
                     .withButtonText(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_TEXT, request.getLocale()))
