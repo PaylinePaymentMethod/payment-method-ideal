@@ -2,8 +2,10 @@ package com.payline.payment.ideal.service.impl;
 
 import com.payline.payment.ideal.Utils;
 import com.payline.payment.ideal.exception.PluginException;
+import com.payline.pmapi.bean.paymentform.bean.field.PaymentFormInputFieldSelect;
 import com.payline.pmapi.bean.paymentform.bean.field.SelectOption;
 import com.payline.pmapi.bean.paymentform.bean.form.BankTransferForm;
+import com.payline.pmapi.bean.paymentform.bean.form.CustomForm;
 import com.payline.pmapi.bean.paymentform.request.PaymentFormConfigurationRequest;
 import com.payline.pmapi.bean.paymentform.response.configuration.PaymentFormConfigurationResponse;
 import com.payline.pmapi.bean.paymentform.response.configuration.impl.PaymentFormConfigurationResponseFailure;
@@ -67,28 +69,30 @@ class PaymentFormConfigurationServiceImplTest {
         Assertions.assertEquals(PaymentFormConfigurationResponseSpecific.class, formConfiguration.getClass());
         PaymentFormConfigurationResponseSpecific responseSpecific = (PaymentFormConfigurationResponseSpecific) formConfiguration;
 
-        Assertions.assertEquals(BankTransferForm.class, responseSpecific.getPaymentForm().getClass());
-        BankTransferForm bankTransferForm = (BankTransferForm) responseSpecific.getPaymentForm();
+        Assertions.assertEquals(CustomForm.class, responseSpecific.getPaymentForm().getClass());
+        CustomForm customForm = (CustomForm) responseSpecific.getPaymentForm();
 
-        SelectOption bank1 = bankTransferForm.getBanks().stream()
+        PaymentFormInputFieldSelect select = (PaymentFormInputFieldSelect) customForm.getCustomFields().get(0);
+
+        SelectOption bank1 = select.getSelectOptions().stream()
                 .filter(bank -> "ABNANL2AXXX".equals(bank.getKey()))
                 .findAny()
                 .orElse(null);
         Assertions.assertEquals("ABN AMRO Bank", bank1.getValue());
 
-        SelectOption bank2 = bankTransferForm.getBanks().stream()
+        SelectOption bank2 = select.getSelectOptions().stream()
                 .filter(bank -> "FRBKNL2LXXX".equals(bank.getKey()))
                 .findAny()
                 .orElse(null);
         Assertions.assertEquals("Friesland Bank", bank2.getValue());
 
-        SelectOption bank3 = bankTransferForm.getBanks().stream()
+        SelectOption bank3 = select.getSelectOptions().stream()
                 .filter(bank -> "INGBNL2AXXX".equals(bank.getKey()))
                 .findAny()
                 .orElse(null);
         Assertions.assertEquals("ING", bank3.getValue());
 
-        SelectOption bank4 = bankTransferForm.getBanks().stream()
+        SelectOption bank4 = select.getSelectOptions().stream()
                 .filter(bank -> "KREDBE22XXX".equals(bank.getKey()))
                 .findAny()
                 .orElse(null);

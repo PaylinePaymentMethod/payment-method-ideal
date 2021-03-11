@@ -14,6 +14,8 @@ import com.payline.pmapi.bean.payment.request.PaymentRequest;
 public class IdealPaymentRequestService {
 
     private static final String EXPIRATION_PERIOD = "PT15M";
+    private static final String IDEAL_DESCRIPTION = "ideal payment";
+    private static final String ENTRANCE_CODE = "D67tyx6rw9IhY71";
 
     // --- Singleton Holder pattern + initialization BEGIN
     private IdealPaymentRequestService() {
@@ -52,8 +54,8 @@ public class IdealPaymentRequestService {
                 .currency(amount.getCurrency().getCurrencyCode())
                 .expirationPeriod(EXPIRATION_PERIOD)
                 .language(request.getLocale().getLanguage())
-                .description("description1")
-                .entranceCode("D67tyx6rw9IhY71")
+                .description(IDEAL_DESCRIPTION)
+                .entranceCode(ENTRANCE_CODE)
                 .build();
         return new IdealPaymentRequest(issuer, merchant, transaction);
     }

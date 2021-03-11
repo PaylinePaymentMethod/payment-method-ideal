@@ -10,6 +10,8 @@ import com.payline.payment.ideal.utils.PluginUtils;
 import com.payline.payment.ideal.utils.XMLUtils;
 import com.payline.payment.ideal.utils.constant.FormConfigurationKeys;
 import com.payline.pmapi.bean.common.FailureCause;
+import com.payline.pmapi.bean.paymentform.bean.field.PaymentFormField;
+import com.payline.pmapi.bean.paymentform.bean.field.PaymentFormInputFieldSelect;
 import com.payline.pmapi.bean.paymentform.bean.field.SelectOption;
 import com.payline.pmapi.bean.paymentform.bean.form.BankTransferForm;
 import com.payline.pmapi.bean.paymentform.bean.form.CustomForm;
@@ -30,12 +32,26 @@ public class PaymentFormConfigurationServiceImpl extends LogoPaymentFormConfigur
     public PaymentFormConfigurationResponse getPaymentFormConfiguration(PaymentFormConfigurationRequest request) {
         try {
 
-            CustomForm customForm = BankTransferForm.builder()
-                    .withBanks(getOptionFromPluginConfiguration(request.getPluginConfiguration()))
+            // Champ de selection de banque
+            final PaymentFormInputFieldSelect selectField = PaymentFormInputFieldSelect.PaymentFormFieldSelectBuilder.aPaymentFormInputFieldSelect()
+                    .withSelectOptions(getOptionFromPluginConfiguration(request.getPluginConfiguration()))
+                    .withIsFilterable(true)
+                    .withKey(BankTransferForm.BANK_KEY)
+                    .withLabel(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_LABEL, request.getLocale()))
+                    .withPlaceholder(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_PLACEHOLDER, request.getLocale()))
+                    .withRequiredErrorMessage(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_ERROR_MSG, request.getLocale()))
+                    .withValidationErrorMessage(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_ERROR_MSG, request.getLocale()))
+                    .withRequired(true)
+                    .build();
+
+            final List<PaymentFormField> paymentFormFields = new ArrayList<>();
+            paymentFormFields.add(selectField);
+
+            final CustomForm customForm = CustomForm.builder()
                     .withDisplayButton(true)
+                    .withDescription("")
                     .withButtonText(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_TEXT, request.getLocale()))
-                    .withDescription(i18n.getMessage(FormConfigurationKeys.FORM_BUTTON_IDEAL_DESCRIPTION, request.getLocale()))
-                    .withCustomFields(new ArrayList<>())
+                    .withCustomFields(paymentFormFields)
                     .build();
 
             return PaymentFormConfigurationResponseSpecific.PaymentFormConfigurationResponseSpecificBuilder
