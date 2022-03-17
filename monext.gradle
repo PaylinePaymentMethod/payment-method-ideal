@@ -2,6 +2,13 @@
 repositories {
     mavenLocal()
     maven {
+        url "https://nexus.intra.monext.fr:10130/nexus/content/repositories/jindus-repo-pay-pay-public/"
+        credentials {
+            username mavenUser
+            password mavenPassword
+        }
+    }
+    maven {
         url "https://nexus.intra.monext.fr:10130/nexus/content/groups/public"
         credentials {
             username mavenUser
@@ -16,6 +23,7 @@ repositories {
         }
     }
 }
+
 ext {
     releaseDirectoryPath = 'D:/build'
 }
@@ -27,23 +35,20 @@ publishing {
             // On modifie l'artifactId pour qu'il correspond au CARDCODE et soit publié dans le bon repo pour etre utiliser via le CA...
             artifactId = 'payment-method-ideal-v2'
             groupId 'com.payline.payment.ideal-v2'
-
-            // For release only
-            //if (!project.version.contains('-')) {
-            //    artifact testJar
-            //}
         }
     }
     repositories {
         maven {
-            if (project.version.endsWith('-SNAPSHOT')) {
-                url "https://nexus.intra.monext.fr:10130/nexus/content/repositories/jindus-repo-pay-pay-snapshot/"
-            } else {
-                url "https://nexus.intra.monext.fr:10130/nexus/content/repositories/jindus-repo-pay-pay-public/"
-            }
-            credentials {
-                username mavenUser
-                password mavenPassword
+            afterEvaluate {
+                if (project.version.endsWith('-SNAPSHOT')) {
+                    url "https://nexus.intra.monext.fr:10130/nexus/content/repositories/jindus-repo-pay-pay-snapshot/"
+                } else {
+                    url "https://nexus.intra.monext.fr:10130/nexus/content/repositories/jindus-repo-pay-pay-public/"
+                }
+                credentials {
+                    username mavenUser
+                    password mavenPassword
+                }
             }
         }
     }

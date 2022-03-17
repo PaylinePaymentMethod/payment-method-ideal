@@ -25,7 +25,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mockito.internal.util.reflection.FieldSetter;
 
 import java.util.Map;
 
@@ -76,6 +75,7 @@ class IdealHttpClientTest {
         doReturn("hello").when(client).createBody(any(), any(PartnerAcquirer.class));
         doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
+        doReturn(true).when(stringResponse).isSuccess();
 
 
         // call method
@@ -97,10 +97,12 @@ class IdealHttpClientTest {
         StringResponse stringResponse = mockStringResponse(200, null, Utils.errorResponse, null);
         final PartnerAcquirer partnerAcquirer = new PartnerAcquirer();
         partnerAcquirer.setUrl("http://www.monext.net");
+
         doReturn(partnerAcquirer).when(partnerConfigurationService).getPartnerAcquirer(any(), anyString());
         doReturn("hello").when(client).createBody(any(), any(PartnerAcquirer.class));
         doReturn(stringResponse).when(client).getStringResponse(anyString(), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
+        doReturn(true).when(stringResponse).isSuccess();
 
         // call method
         final ContractParametersCheckRequest contractParametersCheckRequest = Utils.createContractParametersCheckRequest();
@@ -130,6 +132,7 @@ class IdealHttpClientTest {
         doReturn(stringResponse).when(client).getStringResponse(eq(partnerAcquirer.getUrl()), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
         doReturn(partnerAcquirer).when(client).fetchPartnerAcquirer(any(), any());
+        doReturn(true).when(stringResponse).isSuccess();
 
         // call method
         PaymentRequest request = Utils.createCompletePaymentBuilder().build();
@@ -157,7 +160,7 @@ class IdealHttpClientTest {
         doReturn(stringResponse).when(client).getStringResponse(eq(partnerAcquirer.getUrl()), any());
         doNothing().when(signatureUtils).verifySignatureXML(any(), any());
         doReturn(partnerAcquirer).when(client).fetchPartnerAcquirer(any(), any());
-
+        doReturn(true).when(stringResponse).isSuccess();
 
         // call method
         TransactionStatusRequest request = Utils.createTransactionRequestBuilder().build();
@@ -177,6 +180,8 @@ class IdealHttpClientTest {
     void checkResponse() {
         // create data
         StringResponse response = mockStringResponse(200, null, "this is an answer", null);
+
+        doReturn(true).when(response).isSuccess();
 
         // call method
         Assertions.assertDoesNotThrow(() -> client.checkResponse(response));
@@ -221,26 +226,11 @@ class IdealHttpClientTest {
 
 
     private static StringResponse mockStringResponse(int statusCode, String statusMessage, String content, Map<String, String> headers) {
-        StringResponse response = new StringResponse();
-
-        try {
-            if (content != null && !content.isEmpty()) {
-                FieldSetter.setField(response, StringResponse.class.getDeclaredField("content"), content);
-            }
-            if (headers != null && headers.size() > 0) {
-                FieldSetter.setField(response, StringResponse.class.getDeclaredField("headers"), headers);
-            }
-            if (statusCode >= 100 && statusCode < 600) {
-                FieldSetter.setField(response, StringResponse.class.getDeclaredField("statusCode"), statusCode);
-            }
-            if (statusMessage != null && !statusMessage.isEmpty()) {
-                FieldSetter.setField(response, StringResponse.class.getDeclaredField("statusMessage"), statusMessage);
-            }
-        } catch (NoSuchFieldException e) {
-            // This would happen in a testing context: spare the exception throw, the test case will probably fail anyway
-            return null;
-        }
-
+        StringResponse response = mock(StringResponse.class);
+        doReturn(content).when(response).getContent();
+        doReturn(headers).when(response).getHeaders();
+        doReturn(statusCode).when(response).getStatusCode();
+        doReturn(statusMessage).when(response).getStatusMessage();
         return response;
     }
 }
