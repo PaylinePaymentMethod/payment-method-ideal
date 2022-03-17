@@ -1,5 +1,5 @@
 rootProject.name = 'payment-method-ideal'
 
-if (file('../payline-payment-method-api').exists()) {
-    includeBuild '../payline-payment-method-api'
-}
+//if (file('../payline-payment-method-api').exists()) {
+//    includeBuild '../payline-payment-method-api'
+//}

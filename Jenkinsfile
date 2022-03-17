@@ -24,7 +24,6 @@ pipeline {
             post {
                 failure {
                     updateGitlabCommitStatus name: 'Build', state: 'failed'
-                    slackSend channel: '#devteam', color: 'danger', message: "Assemble ${currentBuild.fullDisplayName} KO"
                 }
                 success {
                     updateGitlabCommitStatus name: 'Build', state: 'success'
@@ -46,7 +45,6 @@ pipeline {
                 }
                 failure {
                     updateGitlabCommitStatus name: 'Test', state: 'failed'
-                    slackSend channel: '#devteam', color: 'danger', message: "Tests ${currentBuild.fullDisplayName} KO"
                 }
                 success {
                     updateGitlabCommitStatus name: 'Test', state: 'success'
@@ -71,11 +69,7 @@ pipeline {
                         }
                     }
                     post {
-                        failure {
-                            slackSend channel: '#devteam', color: 'danger', message: "Publication ${currentBuild.fullDisplayName} KO"
-                        }
                         success {
-                            slackSend channel: '#devteam', color: 'good', message: "Publication ${currentBuild.fullDisplayName} (version V${versionInGradle}) OK"
                             step([$class: 'JiraIssueUpdater', issueSelector: [$class: 'DefaultIssueSelector'], scm: scm])
                         }
                     }
@@ -94,23 +88,8 @@ pipeline {
                             }
                         }
                     }
-                    post {
-                        failure {
-                            slackSend channel: '#devteam', color: 'danger', message: "Analyse Sonar ${currentBuild.fullDisplayName} KO"
-                        }
-                    }
                 }
             }
         }
-       // Not possible from our jenkins
-       // stage ('Tag Git') {
-       //     when {
-       //         anyOf { branch 'master'; branch 'develop'; branch "release/*" }
-       //     }
-       //     steps {
-       //         sh "git tag -f V${versionInGradle}"
-       //         sh "git push origin -f V${versionInGradle}"
-       //     }
-       // }
     }
 }

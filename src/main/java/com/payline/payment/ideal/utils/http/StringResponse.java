@@ -47,7 +47,7 @@ public class StringResponse {
     }
 
     public boolean isSuccess() {
-        return statusCode >= 200 && statusCode < 300;
+        return this.getStatusCode() >= 200 && this.getStatusCode() < 300;
     }
 
     /**
