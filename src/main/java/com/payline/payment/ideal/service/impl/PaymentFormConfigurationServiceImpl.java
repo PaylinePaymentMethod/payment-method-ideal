@@ -75,6 +75,7 @@ public class PaymentFormConfigurationServiceImpl extends LogoPaymentFormConfigur
                     .withPaymentForm(customForm)
                     .build();
         } catch (PluginException e) {
+            log.error("Erreur lors de la construction du formulaire de paiement", e);
             return e.toPaymentFormConfigurationResponseFailureBuilder()
                     .build();
 
